@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { useRouter } from "next/navigation"
 import { CircleAlert } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -28,6 +29,7 @@ export function CreateListDialog({
   children: React.ReactElement
 }) {
   const { createList } = useWorkspaceData()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -38,9 +40,10 @@ export function CreateListDialog({
     setError(null)
     setSubmitting(true)
     try {
-      await createList(projectId, name.trim())
+      const list = await createList(projectId, name.trim())
       setName("")
       setOpen(false)
+      router.push(`/projects/${projectId}/lists/${list.id}`)
     } catch (err) {
       setError((err as Error).message)
     } finally {
