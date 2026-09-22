@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge"
 import type {
   IssuePriority,
   IssueSeverity,
-  IssueStatus,
   IssueType,
+  Status,
+  StatusCategory,
+  StatusColor,
 } from "@/lib/types"
 
 export const ISSUE_TYPES: { value: IssueType; label: string }[] = [
@@ -13,12 +15,25 @@ export const ISSUE_TYPES: { value: IssueType; label: string }[] = [
   { value: "task", label: "Task" },
 ]
 
-export const ISSUE_STATUSES: { value: IssueStatus; label: string }[] = [
-  { value: "open", label: "Open" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "resolved", label: "Resolved" },
+export const STATUS_CATEGORIES: { value: StatusCategory; label: string }[] = [
+  { value: "not_started", label: "Not Started" },
+  { value: "active", label: "Active" },
+  { value: "done", label: "Done" },
   { value: "closed", label: "Closed" },
-  { value: "wont_fix", label: "Won't Fix" },
+]
+
+/** Fixed palette a status's color is chosen from — keep in sync with the backend's STATUS_COLORS. */
+export const STATUS_COLORS: StatusColor[] = [
+  "gray",
+  "blue",
+  "teal",
+  "green",
+  "lime",
+  "yellow",
+  "orange",
+  "red",
+  "magenta",
+  "purple",
 ]
 
 export const ISSUE_SEVERITIES: { value: IssueSeverity; label: string }[] = [
@@ -39,12 +54,31 @@ const TYPE_CLASSNAMES: Record<IssueType, string> = {
   task: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
 }
 
-const STATUS_CLASSNAMES: Record<IssueStatus, string> = {
-  open: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  in_progress: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  resolved: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  closed: "bg-muted text-muted-foreground",
-  wont_fix: "bg-muted text-muted-foreground line-through",
+export const STATUS_COLOR_CLASSNAMES: Record<StatusColor, string> = {
+  gray: "bg-status-gray/10 text-status-gray",
+  blue: "bg-status-blue/10 text-status-blue",
+  teal: "bg-status-teal/10 text-status-teal",
+  green: "bg-status-green/10 text-status-green",
+  lime: "bg-status-lime/10 text-status-lime",
+  yellow: "bg-status-yellow/10 text-status-yellow",
+  orange: "bg-status-orange/10 text-status-orange",
+  red: "bg-status-red/10 text-status-red",
+  magenta: "bg-status-magenta/10 text-status-magenta",
+  purple: "bg-status-purple/10 text-status-purple",
+}
+
+/** Solid swatch classes (no /10 tint) — used for the color-picker dots. */
+export const STATUS_SWATCH_CLASSNAMES: Record<StatusColor, string> = {
+  gray: "bg-status-gray",
+  blue: "bg-status-blue",
+  teal: "bg-status-teal",
+  green: "bg-status-green",
+  lime: "bg-status-lime",
+  yellow: "bg-status-yellow",
+  orange: "bg-status-orange",
+  red: "bg-status-red",
+  magenta: "bg-status-magenta",
+  purple: "bg-status-purple",
 }
 
 const SEVERITY_CLASSNAMES: Record<IssueSeverity, string> = {
@@ -63,9 +97,6 @@ const PRIORITY_CLASSNAMES: Record<IssuePriority, string> = {
 const TYPE_LABELS = Object.fromEntries(
   ISSUE_TYPES.map((t) => [t.value, t.label])
 ) as Record<IssueType, string>
-const STATUS_LABELS = Object.fromEntries(
-  ISSUE_STATUSES.map((s) => [s.value, s.label])
-) as Record<IssueStatus, string>
 const SEVERITY_LABELS = Object.fromEntries(
   ISSUE_SEVERITIES.map((s) => [s.value, s.label])
 ) as Record<IssueSeverity, string>
@@ -94,15 +125,19 @@ export function IssueStatusBadge({
   status,
   className,
 }: {
-  status: IssueStatus
+  status: Status
   className?: string
 }) {
   return (
     <Badge
       variant="outline"
-      className={cn("border-transparent", STATUS_CLASSNAMES[status], className)}
+      className={cn(
+        "border-transparent",
+        STATUS_COLOR_CLASSNAMES[status.color],
+        className
+      )}
     >
-      {STATUS_LABELS[status]}
+      {status.name}
     </Badge>
   )
 }

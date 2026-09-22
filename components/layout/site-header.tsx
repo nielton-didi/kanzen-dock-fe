@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation"
 
 import { NotificationsMenu } from "@/components/layout/notifications-menu"
+import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { UserMenu } from "@/components/layout/user-menu"
 import {
   Breadcrumb,
@@ -10,7 +11,6 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import type { User } from "@/lib/types"
 
@@ -32,7 +32,6 @@ export function SiteHeader({ user }: { user: User }) {
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/95 backdrop-blur">
       <div className="flex flex-1 items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 data-vertical:h-4" />
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -42,8 +41,8 @@ export function SiteHeader({ user }: { user: User }) {
         </Breadcrumb>
       </div>
       <div className="flex items-center gap-1 px-4">
+        <ThemeToggle />
         <NotificationsMenu />
-        <Separator orientation="vertical" className="mx-1 data-vertical:h-4" />
         <UserMenu user={user} />
       </div>
     </header>

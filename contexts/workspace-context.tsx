@@ -25,6 +25,12 @@ interface WorkspaceContextValue {
   createWorkspace: (name: string) => Promise<Workspace>
   createProject: (workspaceId: string, name: string) => Promise<Project>
   createList: (projectId: string, name: string) => Promise<List>
+  updateList: (
+    listId: string,
+    currentProjectId: string,
+    data: { name?: string; project_id?: string }
+  ) => Promise<List>
+  deleteList: (projectId: string, listId: string) => Promise<void>
   deleteProject: (workspaceId: string, projectId: string) => Promise<void>
   deleteWorkspace: (workspaceId: string) => Promise<void>
 }
@@ -158,6 +164,34 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     return list
   }, [])
 
+  const updateList = useCallback(
+    async (
+      listId: string,
+      currentProjectId: string,
+      data: { name?: string; project_id?: string }
+    ) => {
+      const updated = await api.put<List>(`/lists/${listId}`, data)
+      setListsByProject((prev) => {
+        const next = { ...prev }
+        next[currentProjectId] = (next[currentProjectId] ?? []).filter(
+          (l) => l.id !== listId
+        )
+        next[updated.project_id] = [...(next[updated.project_id] ?? []), updated]
+        return next
+      })
+      return updated
+    },
+    []
+  )
+
+  const deleteList = useCallback(async (projectId: string, listId: string) => {
+    await api.delete(`/lists/${listId}`)
+    setListsByProject((prev) => ({
+      ...prev,
+      [projectId]: (prev[projectId] ?? []).filter((l) => l.id !== listId),
+    }))
+  }, [])
+
   const deleteProject = useCallback(async (workspaceId: string, projectId: string) => {
     await api.delete(`/workspaces/${workspaceId}/projects/${projectId}`)
     setWorkspaces((prev) =>
@@ -201,6 +235,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     createWorkspace,
     createProject,
     createList,
+    updateList,
+    deleteList,
     deleteProject,
     deleteWorkspace,
   }

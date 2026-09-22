@@ -1,0 +1,153 @@
+import { FileIcon } from "lucide-react"
+
+import {
+  ISSUE_PRIORITIES,
+  ISSUE_SEVERITIES,
+  ISSUE_TYPES,
+} from "@/components/issues/issue-badges"
+import type { Attachment, IssueHistoryEntry, User, WorkspaceMember } from "@/lib/types"
+
+function formatFieldName(field: string) {
+  return field.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
+}
+
+function formatRelativeTime(dateStr: string) {
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(dateStr).getTime()) / 60000))
+  if (minutes < 1) return "just now"
+  if (minutes < 60) return `${minutes} min${minutes === 1 ? "" : "s"}`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"}`
+  const days = Math.round(hours / 24)
+  return `${days} day${days === 1 ? "" : "s"}`
+}
+
+// The backend doesn't always populate the changer/uploader relation (e.g. a
+// user removed from the workspace after acting), so this stays defensive
+// even though the type says `User` is always present.
+function actorLabel(user: User | null | undefined, currentUserId?: string) {
+  if (!user) return "Someone"
+  if (user.id === currentUserId) return "You"
+  return user.name ?? user.email
+}
+
+function resolveUserLabel(
+  userId: string | null,
+  currentUserId: string | undefined,
+  workspaceMembers: WorkspaceMember[]
+) {
+  if (!userId) return "no one"
+  if (userId === currentUserId) return "You"
+  const member = workspaceMembers.find((m) => m.user_id === userId)
+  return member ? member.user.name ?? member.user.email : userId
+}
+
+function formatValue(field: string, value: string | null) {
+  if (value === null) return "none"
+  if (field === "type") {
+    return ISSUE_TYPES.find((t) => t.value === value)?.label ?? value
+  }
+  // status history is stored as a plain-text status name already, not a value to look up.
+  if (field === "severity") {
+    return ISSUE_SEVERITIES.find((s) => s.value === value)?.label ?? value
+  }
+  if (field === "priority") {
+    return ISSUE_PRIORITIES.find((p) => p.value === value)?.label ?? value
+  }
+  return value
+}
+
+function historyText(
+  entry: IssueHistoryEntry,
+  currentUserId: string | undefined,
+  workspaceMembers: WorkspaceMember[]
+) {
+  const actor = actorLabel(entry.changer, currentUserId)
+  if (entry.field_name === "created") return `${actor} created this task`
+  if (entry.field_name === "assigned_to") {
+    if (!entry.new_value) return `${actor} unassigned this task`
+    return `${actor} assigned this to ${resolveUserLabel(entry.new_value, currentUserId, workspaceMembers)}`
+  }
+  return `${actor} changed ${formatFieldName(entry.field_name)} from ${formatValue(
+    entry.field_name,
+    entry.old_value
+  )} to ${formatValue(entry.field_name, entry.new_value)}`
+}
+
+type ActivityItem =
+  | { id: string; timestamp: string; kind: "history"; entry: IssueHistoryEntry }
+  | { id: string; timestamp: string; kind: "attachment"; attachment: Attachment }
+
+export function IssueActivity({
+  history,
+  attachments,
+  workspaceMembers,
+  currentUserId,
+}: {
+  history?: IssueHistoryEntry[]
+  attachments: Attachment[]
+  workspaceMembers: WorkspaceMember[]
+  currentUserId?: string
+}) {
+  const items: ActivityItem[] = [
+    ...(history ?? []).map((entry) => ({
+      id: `h-${entry.id}`,
+      timestamp: entry.changed_at,
+      kind: "history" as const,
+      entry,
+    })),
+    ...attachments.map((attachment) => ({
+      id: `a-${attachment.id}`,
+      timestamp: attachment.uploaded_at,
+      kind: "attachment" as const,
+      attachment,
+    })),
+  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+
+  if (items.length === 0) {
+    return <p className="text-xs text-muted-foreground">No activity yet.</p>
+  }
+
+  return (
+    <div className="flex flex-col gap-3 text-xs">
+      {items.map((item) => (
+        <div key={item.id} className="flex flex-col gap-1.5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/50" />
+              <span>
+                {item.kind === "history"
+                  ? historyText(item.entry, currentUserId, workspaceMembers)
+                  : `${actorLabel(item.attachment.uploader, currentUserId)} uploaded a file`}
+              </span>
+            </div>
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {formatRelativeTime(item.timestamp)}
+            </span>
+          </div>
+          {item.kind === "attachment" && (
+            <div className="ml-3 flex w-28 flex-col gap-1">
+              <div className="flex h-16 w-28 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
+                {item.attachment.file_type?.startsWith("image") ? (
+                  // Small in-feed preview, not user-facing content that needs
+                  // Next/Image's optimization - a plain <img> keeps this
+                  // decoupled from remote-pattern config for arbitrary hosts.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.attachment.file_url}
+                    alt={item.attachment.file_name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <FileIcon className="size-5 text-muted-foreground" />
+                )}
+              </div>
+              <span className="truncate text-xs text-muted-foreground">
+                {item.attachment.file_name}
+              </span>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
