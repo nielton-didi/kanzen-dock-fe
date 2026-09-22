@@ -11,8 +11,10 @@ export async function apiCall<T>(
   } = await supabase.auth.getSession()
   const token = session?.access_token
 
+  const isFormData = options.body instanceof FormData
+
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers as Record<string, string> | undefined),
   }
 
@@ -53,4 +55,7 @@ export const api = {
     }),
 
   delete: <T>(endpoint: string) => apiCall<T>(endpoint, { method: "DELETE" }),
+
+  upload: <T>(endpoint: string, formData: FormData) =>
+    apiCall<T>(endpoint, { method: "POST", body: formData }),
 }
