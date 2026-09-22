@@ -2,7 +2,9 @@
 
 import { useRef, useState, type KeyboardEvent } from "react"
 import { Plus } from "lucide-react"
+import { cn } from "cn"
 
+import { ISSUE_ROW_COLUMNS } from "@/components/issues/issue-row"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
 import type { Issue } from "@/lib/types"
@@ -84,10 +86,15 @@ export function InlineAddIssue({
       <button
         type="button"
         onClick={() => setAdding(true)}
-        className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        className={cn(
+          ISSUE_ROW_COLUMNS,
+          "w-full rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
       >
-        <Plus className="size-3.5" />
-        Add Task
+        <div className="flex size-5 shrink-0 items-center justify-center">
+          <Plus className="size-3.5" />
+        </div>
+        <span>Add Task</span>
       </button>
     )
   }

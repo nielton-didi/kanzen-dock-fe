@@ -13,26 +13,32 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import type { Issue, Status } from "@/lib/types"
+import type { Issue, Status, WorkspaceMember } from "@/lib/types"
 
 export function StatusGroup({
   status,
+  statuses,
   issues,
+  workspaceMembers,
   listId,
   projectId,
   open,
   onOpenChange,
   onIssueCreated,
   onIssueDeleted,
+  onIssueUpdated,
 }: {
   status: Status
+  statuses: Status[]
   issues: Issue[]
+  workspaceMembers: WorkspaceMember[]
   listId: string
   projectId: string
   open: boolean
   onOpenChange: (open: boolean) => void
   onIssueCreated: (issue: Issue) => void
   onIssueDeleted: (issueId: string) => void
+  onIssueUpdated: (issue: Issue) => void
 }) {
   return (
     <Collapsible open={open} onOpenChange={onOpenChange} className="group/collapsible">
@@ -60,7 +66,7 @@ export function StatusGroup({
         </CreateIssueDialog>
       </div>
       <CollapsibleContent>
-        <div className="flex flex-col py-1.5">
+        <div className="flex flex-col py-1.5 pl-10">
           {issues.length > 0 && (
             <>
               <div
@@ -69,12 +75,13 @@ export function StatusGroup({
                   "px-2 pb-1 text-xs font-medium text-muted-foreground"
                 )}
               >
+                <span />
                 <span>Name</span>
-                <span>Type</span>
-                <span>Status</span>
-                <span>Severity</span>
-                <span>Priority</span>
-                <span>Assignee</span>
+                <span className="justify-self-center">Type</span>
+                <span className="justify-self-center">Status</span>
+                <span className="justify-self-center">Severity</span>
+                <span className="justify-self-center">Priority</span>
+                <span className="justify-self-center">Assignee</span>
                 <span />
               </div>
               <div className="flex flex-col divide-y divide-border/60">
@@ -83,7 +90,10 @@ export function StatusGroup({
                     key={issue.id}
                     issue={issue}
                     href={`/projects/${projectId}/lists/${listId}/issues/${issue.id}`}
+                    statuses={statuses}
+                    workspaceMembers={workspaceMembers}
                     onDeleted={onIssueDeleted}
+                    onUpdated={onIssueUpdated}
                   />
                 ))}
               </div>
