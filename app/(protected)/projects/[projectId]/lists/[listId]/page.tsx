@@ -10,14 +10,15 @@ import {
   IssuePriorityBadge,
   IssueSeverityBadge,
   IssueStatusBadge,
+  IssueTypeBadge,
   ISSUE_PRIORITIES,
   ISSUE_SEVERITIES,
   ISSUE_STATUSES,
+  ISSUE_TYPES,
 } from "@/components/issues/issue-badges"
 import { CreateIssueDialog } from "@/components/issues/create-issue-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
@@ -38,7 +39,13 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { useWorkspaceData } from "@/contexts/workspace-context"
 import { api } from "@/lib/api"
-import type { Issue, IssuePriority, IssueSeverity, IssueStatus } from "@/lib/types"
+import type {
+  Issue,
+  IssuePriority,
+  IssueSeverity,
+  IssueStatus,
+  IssueType,
+} from "@/lib/types"
 
 type FilterValue<T extends string> = T | "all"
 
@@ -55,6 +62,7 @@ export default function ListPage() {
   const [issues, setIssues] = useState<Issue[]>([])
   const [issuesLoading, setIssuesLoading] = useState(false)
   const [issuesError, setIssuesError] = useState<string | null>(null)
+  const [typeFilter, setTypeFilter] = useState<FilterValue<IssueType>>("all")
   const [statusFilter, setStatusFilter] = useState<FilterValue<IssueStatus>>("all")
   const [severityFilter, setSeverityFilter] = useState<FilterValue<IssueSeverity>>("all")
   const [priorityFilter, setPriorityFilter] = useState<FilterValue<IssuePriority>>("all")
@@ -65,6 +73,7 @@ export default function ListPage() {
 
     let cancelled = false
     const params = new URLSearchParams()
+    if (typeFilter !== "all") params.set("type", typeFilter)
     if (statusFilter !== "all") params.set("status", statusFilter)
     if (severityFilter !== "all") params.set("severity", severityFilter)
     if (priorityFilter !== "all") params.set("priority", priorityFilter)
@@ -95,7 +104,7 @@ export default function ListPage() {
     return () => {
       cancelled = true
     }
-  }, [list, statusFilter, severityFilter, priorityFilter, assigneeFilter])
+  }, [list, typeFilter, statusFilter, severityFilter, priorityFilter, assigneeFilter])
 
   if (loading || (listsLoading && !list)) {
     return (
@@ -128,6 +137,7 @@ export default function ListPage() {
   }
 
   const hasActiveFilters =
+    typeFilter !== "all" ||
     statusFilter !== "all" ||
     severityFilter !== "all" ||
     priorityFilter !== "all" ||
@@ -137,11 +147,6 @@ export default function ListPage() {
     <div className="flex w-full flex-1 flex-col gap-4">
       <PageHeader
         title={list.name}
-        badge={
-          <Badge variant="secondary" className="capitalize">
-            {list.type}
-          </Badge>
-        }
         description={`in ${project.name}`}
         actions={
           <CreateIssueDialog
@@ -157,6 +162,23 @@ export default function ListPage() {
       />
 
       <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={typeFilter}
+          onValueChange={(v) => setTypeFilter(v as FilterValue<IssueType>)}
+        >
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            {ISSUE_TYPES.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Select
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as FilterValue<IssueStatus>)}
@@ -270,6 +292,7 @@ export default function ListPage() {
                   <ItemContent>
                     <ItemTitle>{issue.title}</ItemTitle>
                     <div className="flex flex-wrap items-center gap-1.5">
+                      <IssueTypeBadge type={issue.type} />
                       <IssueStatusBadge status={issue.status} />
                       <IssueSeverityBadge severity={issue.severity} />
                       <IssuePriorityBadge priority={issue.priority} />

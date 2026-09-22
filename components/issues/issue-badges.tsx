@@ -1,7 +1,17 @@
 import { cn } from "cn"
 
 import { Badge } from "@/components/ui/badge"
-import type { IssuePriority, IssueSeverity, IssueStatus } from "@/lib/types"
+import type {
+  IssuePriority,
+  IssueSeverity,
+  IssueStatus,
+  IssueType,
+} from "@/lib/types"
+
+export const ISSUE_TYPES: { value: IssueType; label: string }[] = [
+  { value: "bug", label: "Bug" },
+  { value: "task", label: "Task" },
+]
 
 export const ISSUE_STATUSES: { value: IssueStatus; label: string }[] = [
   { value: "open", label: "Open" },
@@ -24,6 +34,11 @@ export const ISSUE_PRIORITIES: { value: IssuePriority; label: string }[] = [
   { value: "low", label: "Low" },
 ]
 
+const TYPE_CLASSNAMES: Record<IssueType, string> = {
+  bug: "bg-red-500/10 text-red-600 dark:text-red-400",
+  task: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+}
+
 const STATUS_CLASSNAMES: Record<IssueStatus, string> = {
   open: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   in_progress: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
@@ -45,6 +60,9 @@ const PRIORITY_CLASSNAMES: Record<IssuePriority, string> = {
   low: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
 }
 
+const TYPE_LABELS = Object.fromEntries(
+  ISSUE_TYPES.map((t) => [t.value, t.label])
+) as Record<IssueType, string>
 const STATUS_LABELS = Object.fromEntries(
   ISSUE_STATUSES.map((s) => [s.value, s.label])
 ) as Record<IssueStatus, string>
@@ -54,6 +72,23 @@ const SEVERITY_LABELS = Object.fromEntries(
 const PRIORITY_LABELS = Object.fromEntries(
   ISSUE_PRIORITIES.map((p) => [p.value, p.label])
 ) as Record<IssuePriority, string>
+
+export function IssueTypeBadge({
+  type,
+  className,
+}: {
+  type: IssueType
+  className?: string
+}) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn("border-transparent", TYPE_CLASSNAMES[type], className)}
+    >
+      {TYPE_LABELS[type]}
+    </Badge>
+  )
+}
 
 export function IssueStatusBadge({
   status,
@@ -76,9 +111,10 @@ export function IssueSeverityBadge({
   severity,
   className,
 }: {
-  severity: IssueSeverity
+  severity: IssueSeverity | null
   className?: string
 }) {
+  if (severity === null) return null
   return (
     <Badge
       variant="outline"

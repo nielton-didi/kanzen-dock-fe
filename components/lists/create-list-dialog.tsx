@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Archive, Bug, CircleAlert, ListTodo, Sparkles } from "lucide-react"
+import { CircleAlert } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -17,23 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { useWorkspaceData } from "@/contexts/workspace-context"
-import type { ListType } from "@/lib/types"
-
-const LIST_TYPES: { value: ListType; label: string; icon: typeof Bug }[] = [
-  { value: "bug", label: "Bug", icon: Bug },
-  { value: "task", label: "Task", icon: ListTodo },
-  { value: "feature", label: "Feature", icon: Sparkles },
-  { value: "backlog", label: "Backlog", icon: Archive },
-]
 
 export function CreateListDialog({
   projectId,
@@ -45,7 +30,6 @@ export function CreateListDialog({
   const { createList } = useWorkspaceData()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
-  const [type, setType] = useState<ListType>("bug")
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -54,9 +38,8 @@ export function CreateListDialog({
     setError(null)
     setSubmitting(true)
     try {
-      await createList(projectId, name.trim(), type)
+      await createList(projectId, name.trim())
       setName("")
-      setType("bug")
       setOpen(false)
     } catch (err) {
       setError((err as Error).message)
@@ -78,7 +61,8 @@ export function CreateListDialog({
         <DialogHeader>
           <DialogTitle>Create list</DialogTitle>
           <DialogDescription>
-            Lists group issues by type, like Bugs or Backlog.
+            Lists group issues together, like Bugs or Backlog. A list can
+            hold a mix of bugs and tasks.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -99,22 +83,6 @@ export function CreateListDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="list-type">Type</FieldLabel>
-              <Select value={type} onValueChange={(v) => setType(v as ListType)}>
-                <SelectTrigger id="list-type" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {LIST_TYPES.map(({ value, label, icon: Icon }) => (
-                    <SelectItem key={value} value={value}>
-                      <Icon className="size-4" />
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </Field>
           </FieldGroup>
           <DialogFooter>

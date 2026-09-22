@@ -4,15 +4,24 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  Archive,
-  Bug,
   ChevronRight,
   FolderKanban,
   ListTodo,
   Plus,
-  Sparkles,
+  Trash2,
 } from "lucide-react"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { CreateListDialog } from "@/components/lists/create-list-dialog"
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
 import {
@@ -34,14 +43,8 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { useWorkspaceData } from "@/contexts/workspace-context"
-import type { List, Project } from "@/lib/types"
-
-const listIcons: Record<List["type"], React.ComponentType<{ className?: string }>> = {
-  bug: Bug,
-  task: ListTodo,
-  feature: Sparkles,
-  backlog: Archive,
-}
+import { useAuth } from "@/hooks/use-auth"
+import { getWorkspaceRole, type Project } from "@/lib/types"
 
 export function NavProjects() {
   const { activeWorkspace, loading } = useWorkspaceData()
@@ -93,9 +96,27 @@ export function NavProjects() {
 
 function ProjectNavItem({ project }: { project: Project }) {
   const pathname = usePathname()
-  const { listsByProject, listsLoading } = useWorkspaceData()
+  const { user } = useAuth()
+  const { activeWorkspace, listsByProject, listsLoading, deleteProject } =
+    useWorkspaceData()
   const lists = listsByProject[project.id]
   const isProjectRoute = pathname.startsWith(`/projects/${project.id}`)
+  const role = activeWorkspace ? getWorkspaceRole(activeWorkspace, user?.id) : null
+  const canDelete = role === "owner" || role === "admin"
+  const [deleting, setDeleting] = React.useState(false)
+  const [deleteError, setDeleteError] = React.useState<string | null>(null)
+
+  async function handleDelete() {
+    if (!activeWorkspace) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteProject(activeWorkspace.id, project.id)
+    } catch (err) {
+      setDeleteError((err as Error).message)
+      setDeleting(false)
+    }
+  }
 
   // Controlled open state: initialized once from the current route, then
   // only ever forced open (never closed) when navigation enters this
@@ -128,8 +149,48 @@ function ProjectNavItem({ project }: { project: Project }) {
           <span className="sr-only">Create list</span>
         </SidebarMenuAction>
       </CreateListDialog>
+      {canDelete && (
+        <AlertDialog>
+          <AlertDialogTrigger
+            render={
+              <SidebarMenuAction
+                showOnHover
+                className="right-7"
+                title="Delete project"
+                disabled={deleting}
+              >
+                <Trash2 />
+                <span className="sr-only">Delete project</span>
+              </SidebarMenuAction>
+            }
+          />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete project?</AlertDialogTitle>
+              <AlertDialogDescription>
+                &quot;{project.name}&quot; and all of its lists, issues,
+                attachments, and history will be permanently deleted. This
+                can&apos;t be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
       <CollapsibleContent>
         <SidebarMenuSub>
+          {deleteError && (
+            <SidebarMenuSubItem>
+              <span className="px-2 py-1 text-xs text-destructive">
+                {deleteError}
+              </span>
+            </SidebarMenuSubItem>
+          )}
           {!lists && listsLoading && (
             <SidebarMenuSubItem>
               <SidebarMenuSkeleton />
@@ -143,14 +204,13 @@ function ProjectNavItem({ project }: { project: Project }) {
             </SidebarMenuSubItem>
           )}
           {lists?.map((list) => {
-            const Icon = listIcons[list.type]
             const href = `/projects/${project.id}/lists/${list.id}`
             const isActive = pathname === href
 
             return (
               <SidebarMenuSubItem key={list.id}>
                 <SidebarMenuSubButton isActive={isActive} render={<Link href={href} />}>
-                  <Icon />
+                  <ListTodo />
                   <span className="flex-1 truncate">{list.name}</span>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>

@@ -10,7 +10,7 @@ import {
 } from "react"
 
 import { api } from "@/lib/api"
-import type { List, ListType, Project, Workspace } from "@/lib/types"
+import type { List, Project, Workspace } from "@/lib/types"
 
 interface WorkspaceContextValue {
   workspaces: Workspace[]
@@ -24,11 +24,9 @@ interface WorkspaceContextValue {
   refetch: () => Promise<void>
   createWorkspace: (name: string) => Promise<Workspace>
   createProject: (workspaceId: string, name: string) => Promise<Project>
-  createList: (
-    projectId: string,
-    name: string,
-    type: ListType
-  ) => Promise<List>
+  createList: (projectId: string, name: string) => Promise<List>
+  deleteProject: (workspaceId: string, projectId: string) => Promise<void>
+  deleteWorkspace: (workspaceId: string) => Promise<void>
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
@@ -149,17 +147,43 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     return project
   }, [])
 
-  const createList = useCallback(
-    async (projectId: string, name: string, type: ListType) => {
-      const list = await api.post<List>(`/projects/${projectId}/lists`, {
-        name,
-        type,
+  const createList = useCallback(async (projectId: string, name: string) => {
+    const list = await api.post<List>(`/projects/${projectId}/lists`, {
+      name,
+    })
+    setListsByProject((prev) => ({
+      ...prev,
+      [projectId]: [...(prev[projectId] ?? []), list],
+    }))
+    return list
+  }, [])
+
+  const deleteProject = useCallback(async (workspaceId: string, projectId: string) => {
+    await api.delete(`/workspaces/${workspaceId}/projects/${projectId}`)
+    setWorkspaces((prev) =>
+      prev.map((w) =>
+        w.id === workspaceId
+          ? { ...w, projects: w.projects.filter((p) => p.id !== projectId) }
+          : w
+      )
+    )
+    setListsByProject((prev) => {
+      const next = { ...prev }
+      delete next[projectId]
+      return next
+    })
+  }, [])
+
+  const deleteWorkspace = useCallback(
+    async (workspaceId: string) => {
+      await api.delete(`/workspaces/${workspaceId}`)
+      setWorkspaces((prev) => {
+        const next = prev.filter((w) => w.id !== workspaceId)
+        setActiveWorkspaceId((current) =>
+          current === workspaceId ? (next[0]?.id ?? null) : current
+        )
+        return next
       })
-      setListsByProject((prev) => ({
-        ...prev,
-        [projectId]: [...(prev[projectId] ?? []), list],
-      }))
-      return list
     },
     []
   )
@@ -177,6 +201,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     createWorkspace,
     createProject,
     createList,
+    deleteProject,
+    deleteWorkspace,
   }
 
   return (

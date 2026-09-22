@@ -2,18 +2,31 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
-import { ArrowLeft, CircleAlert, History } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
+import { ArrowLeft, CircleAlert, History, Trash2 } from "lucide-react"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { IssueAttachments } from "@/components/issues/issue-attachments"
 import {
   ISSUE_PRIORITIES,
   ISSUE_SEVERITIES,
   ISSUE_STATUSES,
+  ISSUE_TYPES,
 } from "@/components/issues/issue-badges"
 import { PageHeader } from "@/components/layout/page-header"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import {
@@ -44,6 +57,9 @@ function formatFieldName(field: string) {
 
 function formatValue(field: string, value: string | null) {
   if (value === null) return "none"
+  if (field === "type") {
+    return ISSUE_TYPES.find((t) => t.value === value)?.label ?? value
+  }
   if (field === "status") {
     return ISSUE_STATUSES.find((s) => s.value === value)?.label ?? value
   }
@@ -67,12 +83,14 @@ export default function IssueDetailPage() {
     issueId: string
   }>()
   const { workspaces } = useWorkspaceData()
+  const router = useRouter()
 
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updateError, setUpdateError] = useState<string | null>(null)
   const [updatingField, setUpdatingField] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -112,6 +130,19 @@ export default function IssueDetailPage() {
       setUpdateError((err as Error).message)
     } finally {
       setUpdatingField(null)
+    }
+  }
+
+  async function handleDelete() {
+    if (!issue) return
+    setDeleting(true)
+    setUpdateError(null)
+    try {
+      await api.delete(`/issues/${issue.id}`)
+      router.push(`/projects/${projectId}/lists/${listId}`)
+    } catch (err) {
+      setUpdateError((err as Error).message)
+      setDeleting(false)
     }
   }
 
@@ -164,6 +195,33 @@ export default function IssueDetailPage() {
           issue.list
             ? `${issue.list.project.workspace.name} / ${issue.list.project.name} / ${issue.list.name}`
             : undefined
+        }
+        actions={
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <Button variant="outline" disabled={deleting}>
+                  <Trash2 />
+                  Delete issue
+                </Button>
+              }
+            />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete issue?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  &quot;{issue.title}&quot; and its attachments and history
+                  will be permanently deleted. This can&apos;t be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         }
       />
 
@@ -249,6 +307,25 @@ export default function IssueDetailPage() {
               <CardTitle>Properties</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
+              <PropertyField label="Type">
+                <Select
+                  value={issue.type}
+                  disabled={updatingField === "type"}
+                  onValueChange={(v) => updateIssue("type", v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ISSUE_TYPES.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </PropertyField>
+
               <PropertyField label="Status">
                 <Select
                   value={issue.status}
@@ -268,24 +345,26 @@ export default function IssueDetailPage() {
                 </Select>
               </PropertyField>
 
-              <PropertyField label="Severity">
-                <Select
-                  value={issue.severity}
-                  disabled={updatingField === "severity"}
-                  onValueChange={(v) => updateIssue("severity", v)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ISSUE_SEVERITIES.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </PropertyField>
+              {issue.type === "bug" && (
+                <PropertyField label="Severity">
+                  <Select
+                    value={issue.severity ?? "medium"}
+                    disabled={updatingField === "severity"}
+                    onValueChange={(v) => updateIssue("severity", v)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ISSUE_SEVERITIES.map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </PropertyField>
+              )}
 
               <PropertyField label="Priority">
                 <Select

@@ -31,6 +31,15 @@ export interface Workspace {
   updated_at: string
 }
 
+export function getWorkspaceRole(
+  workspace: Workspace,
+  userId?: string | null
+): WorkspaceRole | null {
+  if (!userId) return null
+  if (workspace.owner_id === userId) return "owner"
+  return workspace.members.find((m) => m.user_id === userId)?.role ?? null
+}
+
 export interface Project {
   id: string
   name: string
@@ -41,17 +50,15 @@ export interface Project {
   updated_at: string
 }
 
-export type ListType = "bug" | "task" | "feature" | "backlog"
-
 export interface List {
   id: string
   name: string
-  type: ListType
   project_id: string
   created_at: string
   updated_at: string
 }
 
+export type IssueType = "bug" | "task"
 export type IssueStatus =
   | "open"
   | "in_progress"
@@ -89,8 +96,10 @@ export interface Issue {
   title: string
   description?: string
   list_id: string
+  type: IssueType
   status: IssueStatus
-  severity: IssueSeverity
+  // Only valid (non-null) when `type` is "bug".
+  severity: IssueSeverity | null
   priority: IssuePriority
   assigned_to?: string | null
   reported_by: string

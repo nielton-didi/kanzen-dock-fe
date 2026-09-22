@@ -1,5 +1,20 @@
 "use client"
 
+import { useState } from "react"
+import { CircleAlert } from "lucide-react"
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PageHeader } from "@/components/layout/page-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -16,13 +31,29 @@ import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useWorkspaceData } from "@/contexts/workspace-context"
 import { useAuth } from "@/hooks/use-auth"
+import { getWorkspaceRole } from "@/lib/types"
 
 export default function SettingsPage() {
   const { user } = useAuth()
-  const { activeWorkspace, loading } = useWorkspaceData()
+  const { activeWorkspace, loading, deleteWorkspace } = useWorkspaceData()
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const name = (user?.user_metadata?.name as string | undefined) ?? ""
   const email = user?.email ?? ""
+  const role = activeWorkspace ? getWorkspaceRole(activeWorkspace, user?.id) : null
+
+  async function handleDeleteWorkspace() {
+    if (!activeWorkspace) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteWorkspace(activeWorkspace.id)
+    } catch (err) {
+      setDeleteError((err as Error).message)
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className="flex w-full flex-1 flex-col gap-6">
@@ -109,6 +140,58 @@ export default function SettingsPage() {
               )}
             </CardContent>
           </Card>
+
+          {activeWorkspace && role === "owner" && (
+            <Card className="mt-4 border-destructive/50">
+              <CardHeader>
+                <CardTitle>Danger zone</CardTitle>
+                <CardDescription>
+                  Deleting a workspace also deletes all of its projects,
+                  lists, issues, and attachments. This can&apos;t be undone.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                {deleteError && (
+                  <Alert variant="destructive">
+                    <CircleAlert />
+                    <AlertDescription>{deleteError}</AlertDescription>
+                  </Alert>
+                )}
+                <AlertDialog>
+                  <AlertDialogTrigger
+                    render={
+                      <Button
+                        variant="destructive"
+                        className="w-fit"
+                        disabled={deleting}
+                      >
+                        Delete workspace
+                      </Button>
+                    }
+                  />
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete workspace?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        &quot;{activeWorkspace.name}&quot; and everything in
+                        it will be permanently deleted. This can&apos;t be
+                        undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        variant="destructive"
+                        onClick={handleDeleteWorkspace}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

@@ -27,8 +27,12 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api"
-import type { Issue, IssuePriority, IssueSeverity } from "@/lib/types"
-import { ISSUE_PRIORITIES, ISSUE_SEVERITIES } from "@/components/issues/issue-badges"
+import type { Issue, IssuePriority, IssueSeverity, IssueType } from "@/lib/types"
+import {
+  ISSUE_PRIORITIES,
+  ISSUE_SEVERITIES,
+  ISSUE_TYPES,
+} from "@/components/issues/issue-badges"
 
 export function CreateIssueDialog({
   listId,
@@ -42,6 +46,7 @@ export function CreateIssueDialog({
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [type, setType] = useState<IssueType>("bug")
   const [severity, setSeverity] = useState<IssueSeverity>("medium")
   const [priority, setPriority] = useState<IssuePriority>("medium")
   const [error, setError] = useState<string | null>(null)
@@ -50,6 +55,7 @@ export function CreateIssueDialog({
   function reset() {
     setTitle("")
     setDescription("")
+    setType("bug")
     setSeverity("medium")
     setPriority("medium")
   }
@@ -62,7 +68,8 @@ export function CreateIssueDialog({
       const issue = await api.post<Issue>(`/lists/${listId}/issues`, {
         title: title.trim(),
         description: description.trim() || undefined,
-        severity,
+        type,
+        ...(type === "bug" ? { severity } : {}),
         priority,
       })
       onCreated(issue)
@@ -122,16 +129,16 @@ export function CreateIssueDialog({
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="issue-severity">Severity</FieldLabel>
+                <FieldLabel htmlFor="issue-type">Type</FieldLabel>
                 <Select
-                  value={severity}
-                  onValueChange={(v) => setSeverity(v as IssueSeverity)}
+                  value={type}
+                  onValueChange={(v) => setType(v as IssueType)}
                 >
-                  <SelectTrigger id="issue-severity" className="w-full">
+                  <SelectTrigger id="issue-type" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ISSUE_SEVERITIES.map(({ value, label }) => (
+                    {ISSUE_TYPES.map(({ value, label }) => (
                       <SelectItem key={value} value={value}>
                         {label}
                       </SelectItem>
@@ -157,6 +164,26 @@ export function CreateIssueDialog({
                   </SelectContent>
                 </Select>
               </Field>
+              {type === "bug" && (
+                <Field>
+                  <FieldLabel htmlFor="issue-severity">Severity</FieldLabel>
+                  <Select
+                    value={severity}
+                    onValueChange={(v) => setSeverity(v as IssueSeverity)}
+                  >
+                    <SelectTrigger id="issue-severity" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ISSUE_SEVERITIES.map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
             </div>
           </FieldGroup>
           <DialogFooter>
