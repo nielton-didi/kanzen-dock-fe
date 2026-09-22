@@ -2,6 +2,20 @@ import { supabase } from "@/lib/auth"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
+/** Thrown on a non-ok response. Carries the status and full parsed body so
+ * callers can branch on specifics (e.g. a 409 with { issuesCount }), not just
+ * the message string. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly body: unknown
+  ) {
+    super(message)
+    this.name = "ApiError"
+  }
+}
+
 export async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -29,7 +43,11 @@ export async function apiCall<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => null)
-    throw new Error(error?.message ?? "API request failed")
+    throw new ApiError(
+      error?.message ?? "API request failed",
+      response.status,
+      error
+    )
   }
 
   if (response.status === 204) {
@@ -54,7 +72,17 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  delete: <T>(endpoint: string) => apiCall<T>(endpoint, { method: "DELETE" }),
+  delete: <T>(endpoint: string, data?: unknown) =>
+    apiCall<T>(endpoint, {
+      method: "DELETE",
+      ...(data !== undefined ? { body: JSON.stringify(data) } : {}),
+    }),
+
+  patch: <T>(endpoint: string, data: unknown) =>
+    apiCall<T>(endpoint, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 
   upload: <T>(endpoint: string, formData: FormData) =>
     apiCall<T>(endpoint, { method: "POST", body: formData }),

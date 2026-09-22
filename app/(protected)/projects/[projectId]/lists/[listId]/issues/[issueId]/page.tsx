@@ -20,7 +20,6 @@ import { IssueAttachments } from "@/components/issues/issue-attachments"
 import {
   ISSUE_PRIORITIES,
   ISSUE_SEVERITIES,
-  ISSUE_STATUSES,
   ISSUE_TYPES,
 } from "@/components/issues/issue-badges"
 import { PageHeader } from "@/components/layout/page-header"
@@ -46,6 +45,7 @@ import {
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { useWorkspaceData } from "@/contexts/workspace-context"
+import { useListStatuses } from "@/hooks/use-list-statuses"
 import { api } from "@/lib/api"
 import type { Issue } from "@/lib/types"
 
@@ -60,9 +60,7 @@ function formatValue(field: string, value: string | null) {
   if (field === "type") {
     return ISSUE_TYPES.find((t) => t.value === value)?.label ?? value
   }
-  if (field === "status") {
-    return ISSUE_STATUSES.find((s) => s.value === value)?.label ?? value
-  }
+  // status history is stored as a plain-text status name already, not a value to look up.
   if (field === "severity") {
     return ISSUE_SEVERITIES.find((s) => s.value === value)?.label ?? value
   }
@@ -84,6 +82,7 @@ export default function IssueDetailPage() {
   }>()
   const { workspaces } = useWorkspaceData()
   const router = useRouter()
+  const { statuses } = useListStatuses(listId)
 
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
@@ -328,17 +327,17 @@ export default function IssueDetailPage() {
 
               <PropertyField label="Status">
                 <Select
-                  value={issue.status}
-                  disabled={updatingField === "status"}
-                  onValueChange={(v) => updateIssue("status", v)}
+                  value={issue.status_id}
+                  disabled={updatingField === "status_id"}
+                  onValueChange={(v) => updateIssue("status_id", v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ISSUE_STATUSES.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
+                    {statuses.map((status) => (
+                      <SelectItem key={status.id} value={status.id}>
+                        {status.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
