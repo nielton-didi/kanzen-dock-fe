@@ -1,34 +1,41 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { CircleAlert, ListTodo, Plus } from "lucide-react"
+import {
+  AlertTriangle,
+  CircleAlert,
+  CircleDot,
+  Flag,
+  ListTodo,
+  Plus,
+  Settings,
+  Tags,
+  UserRound,
+} from "lucide-react"
 
 import { PageHeader } from "@/components/layout/page-header"
+import { StatusGroup } from "@/components/issues/status-group"
 import {
-  IssuePriorityBadge,
-  IssueSeverityBadge,
-  IssueStatusBadge,
-  IssueTypeBadge,
   ISSUE_PRIORITIES,
   ISSUE_SEVERITIES,
-  ISSUE_STATUSES,
   ISSUE_TYPES,
 } from "@/components/issues/issue-badges"
 import { CreateIssueDialog } from "@/components/issues/create-issue-dialog"
+import { CreateStatusDialog } from "@/components/statuses/create-status-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
-import {
-  Item,
-  ItemContent,
-  ItemGroup,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item"
 import {
   Select,
   SelectContent,
@@ -38,14 +45,9 @@ import {
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { useWorkspaceData } from "@/contexts/workspace-context"
+import { useListStatuses } from "@/hooks/use-list-statuses"
 import { api } from "@/lib/api"
-import type {
-  Issue,
-  IssuePriority,
-  IssueSeverity,
-  IssueStatus,
-  IssueType,
-} from "@/lib/types"
+import type { Issue, IssuePriority, IssueSeverity, IssueType } from "@/lib/types"
 
 type FilterValue<T extends string> = T | "all"
 
@@ -59,14 +61,38 @@ export default function ListPage() {
     ? workspaces.find((w) => w.id === project.workspace_id)
     : undefined
 
+  const { statuses, refetch: refetchStatuses } = useListStatuses(list?.id)
+
   const [issues, setIssues] = useState<Issue[]>([])
   const [issuesLoading, setIssuesLoading] = useState(false)
   const [issuesError, setIssuesError] = useState<string | null>(null)
   const [typeFilter, setTypeFilter] = useState<FilterValue<IssueType>>("all")
-  const [statusFilter, setStatusFilter] = useState<FilterValue<IssueStatus>>("all")
+  const [statusFilter, setStatusFilter] = useState<FilterValue<string>>("all")
   const [severityFilter, setSeverityFilter] = useState<FilterValue<IssueSeverity>>("all")
   const [priorityFilter, setPriorityFilter] = useState<FilterValue<IssuePriority>>("all")
   const [assigneeFilter, setAssigneeFilter] = useState<string>("all")
+  const [collapsedStatusIds, setCollapsedStatusIds] = useState<Set<string>>(
+    () => new Set()
+  )
+
+  const issuesByStatus = useMemo(() => {
+    const map = new Map<string, Issue[]>()
+    for (const issue of issues) {
+      const bucket = map.get(issue.status_id)
+      if (bucket) bucket.push(issue)
+      else map.set(issue.status_id, [issue])
+    }
+    return map
+  }, [issues])
+
+  function toggleStatusCollapsed(statusId: string, open: boolean) {
+    setCollapsedStatusIds((prev) => {
+      const next = new Set(prev)
+      if (open) next.delete(statusId)
+      else next.add(statusId)
+      return next
+    })
+  }
 
   useEffect(() => {
     if (!list) return
@@ -74,7 +100,7 @@ export default function ListPage() {
     let cancelled = false
     const params = new URLSearchParams()
     if (typeFilter !== "all") params.set("type", typeFilter)
-    if (statusFilter !== "all") params.set("status", statusFilter)
+    if (statusFilter !== "all") params.set("status_id", statusFilter)
     if (severityFilter !== "all") params.set("severity", severityFilter)
     if (priorityFilter !== "all") params.set("priority", priorityFilter)
     if (assigneeFilter !== "all") params.set("assigned_to", assigneeFilter)
@@ -146,18 +172,46 @@ export default function ListPage() {
   return (
     <div className="flex w-full flex-1 flex-col gap-4">
       <PageHeader
-        title={list.name}
-        description={`in ${project.name}`}
+        title={
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink render={<Link href={`/projects/${projectId}`} />}>
+                  {project.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-xl font-semibold tracking-tight">
+                  {list.name}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        }
         actions={
-          <CreateIssueDialog
-            listId={list.id}
-            onCreated={(issue) => setIssues((prev) => [issue, ...prev])}
-          >
-            <Button>
-              <Plus />
-              New issue
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              nativeButton={false}
+              render={
+                <Link href={`/projects/${projectId}/lists/${listId}/settings`} />
+              }
+            >
+              <Settings />
+              <span className="sr-only">List settings</span>
             </Button>
-          </CreateIssueDialog>
+            <CreateIssueDialog
+              listId={list.id}
+              onCreated={(issue) => setIssues((prev) => [issue, ...prev])}
+            >
+              <Button>
+                <Plus />
+                New issue
+              </Button>
+            </CreateIssueDialog>
+          </div>
         }
       />
 
@@ -167,7 +221,10 @@ export default function ListPage() {
           onValueChange={(v) => setTypeFilter(v as FilterValue<IssueType>)}
         >
           <SelectTrigger className="w-32">
-            <SelectValue placeholder="Type" />
+            <span className="flex items-center gap-1.5">
+              <Tags className="size-3.5 text-muted-foreground" />
+              <SelectValue placeholder="Type" />
+            </span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All types</SelectItem>
@@ -181,27 +238,40 @@ export default function ListPage() {
 
         <Select
           value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v as FilterValue<IssueStatus>)}
+          onValueChange={(v) => setStatusFilter(v as FilterValue<string>)}
         >
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Status" />
+            <span className="flex items-center gap-1.5">
+              <CircleDot className="size-3.5 text-muted-foreground" />
+              <SelectValue placeholder="Status" />
+            </span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
-            {ISSUE_STATUSES.map(({ value, label }) => (
-              <SelectItem key={value} value={value}>
-                {label}
+            {statuses.map((status) => (
+              <SelectItem key={status.id} value={status.id}>
+                {status.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
+        <CreateStatusDialog listId={list.id} onCreated={() => refetchStatuses()}>
+          <Button variant="outline" size="sm">
+            <Plus />
+            Add status
+          </Button>
+        </CreateStatusDialog>
 
         <Select
           value={severityFilter}
           onValueChange={(v) => setSeverityFilter(v as FilterValue<IssueSeverity>)}
         >
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Severity" />
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="size-3.5 text-muted-foreground" />
+              <SelectValue placeholder="Severity" />
+            </span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All severities</SelectItem>
@@ -218,7 +288,10 @@ export default function ListPage() {
           onValueChange={(v) => setPriorityFilter(v as FilterValue<IssuePriority>)}
         >
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Priority" />
+            <span className="flex items-center gap-1.5">
+              <Flag className="size-3.5 text-muted-foreground" />
+              <SelectValue placeholder="Priority" />
+            </span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All priorities</SelectItem>
@@ -236,7 +309,10 @@ export default function ListPage() {
             onValueChange={(v) => setAssigneeFilter(v ?? "all")}
           >
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Assignee" />
+              <span className="flex items-center gap-1.5">
+                <UserRound className="size-3.5 text-muted-foreground" />
+                <SelectValue placeholder="Assignee" />
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All assignees</SelectItem>
@@ -263,56 +339,48 @@ export default function ListPage() {
             <div className="flex items-center justify-center py-16">
               <Spinner className="size-6 text-muted-foreground" />
             </div>
-          ) : issues.length === 0 ? (
+          ) : hasActiveFilters && issues.length === 0 ? (
             <div className="flex items-center justify-center py-16">
               <Empty className="border-0">
                 <EmptyMedia variant="icon">
                   <ListTodo />
                 </EmptyMedia>
-                <EmptyTitle>
-                  {hasActiveFilters ? "No matching issues" : "No issues yet"}
-                </EmptyTitle>
+                <EmptyTitle>No matching issues</EmptyTitle>
                 <EmptyDescription>
-                  {hasActiveFilters
-                    ? "Try adjusting or clearing the filters above."
-                    : `Create the first issue for "${list.name}".`}
+                  Try adjusting or clearing the filters above.
+                </EmptyDescription>
+              </Empty>
+            </div>
+          ) : statuses.length === 0 ? (
+            <div className="flex items-center justify-center py-16">
+              <Empty className="border-0">
+                <EmptyMedia variant="icon">
+                  <ListTodo />
+                </EmptyMedia>
+                <EmptyTitle>No issues yet</EmptyTitle>
+                <EmptyDescription>
+                  {`Create the first issue for "${list.name}".`}
                 </EmptyDescription>
               </Empty>
             </div>
           ) : (
-            <ItemGroup>
-              {issues.map((issue) => (
-                <Item
-                  key={issue.id}
-                  render={
-                    <Link href={`/projects/${projectId}/lists/${listId}/issues/${issue.id}`} />
+            <div className="flex flex-col gap-2">
+              {statuses.map((status) => (
+                <StatusGroup
+                  key={status.id}
+                  status={status}
+                  issues={issuesByStatus.get(status.id) ?? []}
+                  listId={listId}
+                  projectId={projectId}
+                  open={!collapsedStatusIds.has(status.id)}
+                  onOpenChange={(open) => toggleStatusCollapsed(status.id, open)}
+                  onIssueCreated={(issue) => setIssues((prev) => [issue, ...prev])}
+                  onIssueDeleted={(issueId) =>
+                    setIssues((prev) => prev.filter((i) => i.id !== issueId))
                   }
-                  variant="outline"
-                >
-                  <ItemContent>
-                    <ItemTitle>{issue.title}</ItemTitle>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <IssueTypeBadge type={issue.type} />
-                      <IssueStatusBadge status={issue.status} />
-                      <IssueSeverityBadge severity={issue.severity} />
-                      <IssuePriorityBadge priority={issue.priority} />
-                    </div>
-                  </ItemContent>
-                  {issue.assignee && (
-                    <ItemMedia>
-                      <Avatar size="sm">
-                        <AvatarImage src={issue.assignee.avatar_url} />
-                        <AvatarFallback>
-                          {(issue.assignee.name ?? issue.assignee.email)
-                            .charAt(0)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </ItemMedia>
-                  )}
-                </Item>
+                />
               ))}
-            </ItemGroup>
+            </div>
           )}
         </CardContent>
       </Card>
