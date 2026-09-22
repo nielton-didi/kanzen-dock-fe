@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation"
 
 import { NotificationsMenu } from "@/components/layout/notifications-menu"
+import { ThemeToggle } from "@/components/layout/theme-toggle"
 import { UserMenu } from "@/components/layout/user-menu"
 import {
   Breadcrumb,
@@ -40,6 +41,7 @@ export function SiteHeader({ user }: { user: User }) {
         </Breadcrumb>
       </div>
       <div className="flex items-center gap-1 px-4">
+        <ThemeToggle />
         <NotificationsMenu />
         <UserMenu user={user} />
       </div>
