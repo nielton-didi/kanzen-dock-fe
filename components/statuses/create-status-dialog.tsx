@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { useRouter } from "next/navigation"
 import { CircleAlert } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -19,17 +18,18 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
-import { useWorkspaceData } from "@/contexts/workspace-context"
+import { api } from "@/lib/api"
+import type { Status } from "@/lib/types"
 
-export function CreateListDialog({
-  projectId,
+export function CreateStatusDialog({
+  listId,
+  onCreated,
   children,
 }: {
-  projectId: string
+  listId: string
+  onCreated: (status: Status) => void
   children: React.ReactElement
 }) {
-  const { createList } = useWorkspaceData()
-  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -40,10 +40,12 @@ export function CreateListDialog({
     setError(null)
     setSubmitting(true)
     try {
-      const list = await createList(projectId, name.trim())
+      const status = await api.post<Status>(`/lists/${listId}/statuses`, {
+        name: name.trim(),
+      })
+      onCreated(status)
       setName("")
       setOpen(false)
-      router.push(`/projects/${projectId}/lists/${list.id}`)
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -62,10 +64,10 @@ export function CreateListDialog({
       <DialogTrigger render={children} />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create list</DialogTitle>
+          <DialogTitle>Add status</DialogTitle>
           <DialogDescription>
-            Lists group issues together, like Bugs or Backlog. A list can
-            hold a mix of bugs and tasks.
+            New statuses start in the Active column. You can recolor, rename,
+            or move it between categories later from list settings.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -77,10 +79,10 @@ export function CreateListDialog({
               </Alert>
             )}
             <Field>
-              <FieldLabel htmlFor="list-name">Name</FieldLabel>
+              <FieldLabel htmlFor="status-name">Name</FieldLabel>
               <Input
-                id="list-name"
-                placeholder="Bugs"
+                id="status-name"
+                placeholder="In Review"
                 autoFocus
                 required
                 value={name}
@@ -94,7 +96,7 @@ export function CreateListDialog({
             </DialogClose>
             <Button type="submit" disabled={submitting || !name.trim()}>
               {submitting && <Spinner />}
-              Create
+              Add
             </Button>
           </DialogFooter>
         </form>

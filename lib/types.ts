@@ -59,14 +59,32 @@ export interface List {
 }
 
 export type IssueType = "bug" | "task"
-export type IssueStatus =
-  | "open"
-  | "in_progress"
-  | "resolved"
-  | "closed"
-  | "wont_fix"
 export type IssueSeverity = "critical" | "high" | "medium" | "low"
 export type IssuePriority = "high" | "medium" | "low"
+
+export type StatusCategory = "not_started" | "active" | "done" | "closed"
+export type StatusColor =
+  | "gray"
+  | "blue"
+  | "teal"
+  | "green"
+  | "lime"
+  | "yellow"
+  | "orange"
+  | "red"
+  | "magenta"
+  | "purple"
+
+export interface Status {
+  id: string
+  list_id: string
+  name: string
+  category: StatusCategory
+  color: StatusColor
+  position: number
+  created_at: string
+  updated_at: string
+}
 
 export interface Attachment {
   id: string
@@ -97,7 +115,8 @@ export interface Issue {
   description?: string
   list_id: string
   type: IssueType
-  status: IssueStatus
+  status_id: string
+  status: Status
   // Only valid (non-null) when `type` is "bug".
   severity: IssueSeverity | null
   priority: IssuePriority

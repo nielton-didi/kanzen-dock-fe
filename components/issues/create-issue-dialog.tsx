@@ -36,10 +36,13 @@ import {
 
 export function CreateIssueDialog({
   listId,
+  statusId,
   onCreated,
   children,
 }: {
   listId: string
+  /** Preselects the status the new issue is created into (e.g. from a status group's "+" button). */
+  statusId?: string
   onCreated: (issue: Issue) => void
   children: React.ReactElement
 }) {
@@ -71,6 +74,7 @@ export function CreateIssueDialog({
         type,
         ...(type === "bug" ? { severity } : {}),
         priority,
+        ...(statusId ? { status_id: statusId } : {}),
       })
       onCreated(issue)
       reset()
