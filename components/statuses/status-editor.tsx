@@ -50,16 +50,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { STATUS_CATEGORIES } from "@/components/issues/issue-badges"
 import { StatusColorPicker } from "@/components/statuses/status-color-picker"
 import { ApiError, api } from "@/lib/api"
 import type { Status, StatusCategory, StatusColor } from "@/lib/types"
-
-const CATEGORIES: { value: StatusCategory; label: string }[] = [
-  { value: "not_started", label: "Not Started" },
-  { value: "active", label: "Active" },
-  { value: "done", label: "Done" },
-  { value: "closed", label: "Closed" },
-]
 
 type Grouped = Record<StatusCategory, Status[]>
 
@@ -72,7 +66,7 @@ function groupByCategory(statuses: Status[]): Grouped {
 }
 
 function findContainer(grouped: Grouped, id: string): StatusCategory | undefined {
-  return CATEGORIES.find(({ value }) => grouped[value].some((s) => s.id === id))?.value
+  return STATUS_CATEGORIES.find(({ value }) => grouped[value].some((s) => s.id === id))?.value
 }
 
 export function StatusEditor({
@@ -128,7 +122,7 @@ export function StatusEditor({
 
     const activeContainer = findContainer(grouped, String(active.id))
     const overContainer =
-      CATEGORIES.find((c) => c.value === over.id)?.value ??
+      STATUS_CATEGORIES.find((c) => c.value === over.id)?.value ??
       findContainer(grouped, String(over.id))
 
     if (!activeContainer || !overContainer || activeContainer === overContainer) return
@@ -223,7 +217,7 @@ export function StatusEditor({
         onDragEnd={handleDragEnd}
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {CATEGORIES.map(({ value, label }) => (
+          {STATUS_CATEGORIES.map(({ value, label }) => (
             <CategoryColumn
               key={value}
               category={value}

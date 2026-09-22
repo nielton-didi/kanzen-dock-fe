@@ -6,12 +6,20 @@ import type {
   IssueSeverity,
   IssueType,
   Status,
+  StatusCategory,
   StatusColor,
 } from "@/lib/types"
 
 export const ISSUE_TYPES: { value: IssueType; label: string }[] = [
   { value: "bug", label: "Bug" },
   { value: "task", label: "Task" },
+]
+
+export const STATUS_CATEGORIES: { value: StatusCategory; label: string }[] = [
+  { value: "not_started", label: "Not Started" },
+  { value: "active", label: "Active" },
+  { value: "done", label: "Done" },
+  { value: "closed", label: "Closed" },
 ]
 
 /** Fixed palette a status's color is chosen from — keep in sync with the backend's STATUS_COLORS. */
