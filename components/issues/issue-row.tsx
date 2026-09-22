@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { CircleAlert, Trash2, UserRound } from "lucide-react"
 import { cn } from "cn"
@@ -45,20 +44,19 @@ type EditableField = "type" | "severity" | "priority" | "assigned_to"
 
 export function IssueRow({
   issue,
-  href,
+  onOpen,
   statuses,
   workspaceMembers,
   onDeleted,
   onUpdated,
 }: {
   issue: Issue
-  href: string
+  onOpen: (issueId: string) => void
   statuses: Status[]
   workspaceMembers: WorkspaceMember[]
   onDeleted: (issueId: string) => void
   onUpdated: (issue: Issue) => void
 }) {
-  const router = useRouter()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -114,13 +112,13 @@ export function IssueRow({
 
   return (
     // A native <a> can't validly contain the delete button below, so the
-    // row itself is click-to-navigate via router.push rather than a Link.
+    // row itself is click-to-open rather than a Link.
     <div
       role="link"
       tabIndex={0}
-      onClick={() => router.push(href)}
+      onClick={() => onOpen(issue.id)}
       onKeyDown={(event) => {
-        if (event.key === "Enter") router.push(href)
+        if (event.key === "Enter") onOpen(issue.id)
       }}
       className={cn(
         ISSUE_ROW_COLUMNS,

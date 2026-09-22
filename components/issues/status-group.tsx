@@ -21,7 +21,7 @@ export function StatusGroup({
   issues,
   workspaceMembers,
   listId,
-  projectId,
+  onIssueOpen,
   open,
   onOpenChange,
   onIssueCreated,
@@ -33,7 +33,7 @@ export function StatusGroup({
   issues: Issue[]
   workspaceMembers: WorkspaceMember[]
   listId: string
-  projectId: string
+  onIssueOpen: (issueId: string) => void
   open: boolean
   onOpenChange: (open: boolean) => void
   onIssueCreated: (issue: Issue) => void
@@ -89,7 +89,7 @@ export function StatusGroup({
                   <IssueRow
                     key={issue.id}
                     issue={issue}
-                    href={`/projects/${projectId}/lists/${listId}/issues/${issue.id}`}
+                    onOpen={onIssueOpen}
                     statuses={statuses}
                     workspaceMembers={workspaceMembers}
                     onDeleted={onIssueDeleted}

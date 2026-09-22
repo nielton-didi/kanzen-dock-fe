@@ -1,7 +1,8 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { CircleAlert, FileIcon, Trash2, Upload } from "lucide-react"
+import { CircleAlert, FileIcon, Paperclip, Trash2 } from "lucide-react"
+import { cn } from "cn"
 
 import {
   AlertDialog,
@@ -26,6 +27,7 @@ import {
   AttachmentTitle,
   AttachmentTrigger,
 } from "@/components/ui/attachment"
+import { Badge } from "@/components/ui/badge"
 import { api } from "@/lib/api"
 import type { Attachment as AttachmentType } from "@/lib/types"
 
@@ -49,6 +51,7 @@ export function IssueAttachments({
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleFiles(files: FileList | null) {
@@ -93,14 +96,90 @@ export function IssueAttachments({
     }
   }
 
+  const hiddenInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      className="hidden"
+      disabled={uploading}
+      onChange={(e) => handleFiles(e.target.files)}
+    />
+  )
+
+  const dropzone = (
+    <div
+      onDragOver={(e) => {
+        e.preventDefault()
+        setDragging(true)
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDragging(false)
+        handleFiles(e.dataTransfer.files)
+      }}
+      className={cn(
+        "flex items-center justify-center rounded-md border border-dashed px-4 py-3 text-center text-sm text-muted-foreground",
+        dragging && "border-foreground/40 bg-muted/40"
+      )}
+    >
+      {uploading ? (
+        "Uploading..."
+      ) : (
+        <>
+          Drop files here or{" "}
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="ml-1 underline underline-offset-2 hover:text-foreground"
+          >
+            browse
+          </button>
+        </>
+      )}
+    </div>
+  )
+
+  // No files yet - show a plain "Attach file" link rather than the full
+  // upload grid, so the panel stays minimal until there's something to show.
+  if (attachments.length === 0) {
+    return (
+      <div className="flex flex-col gap-2">
+        {error && (
+          <Alert variant="destructive">
+            <CircleAlert />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+          className="flex w-fit items-center gap-2 text-sm text-muted-foreground outline-none hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+        >
+          <Paperclip className="size-4" />
+          {uploading ? "Uploading..." : "Attach file"}
+        </button>
+        {hiddenInput}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs font-medium text-muted-foreground">Attachments</span>
+        <Badge variant="secondary">{attachments.length}</Badge>
+      </div>
+
       {error && (
         <Alert variant="destructive">
           <CircleAlert />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      {dropzone}
 
       <AttachmentGroup>
         {attachments.map((attachment) => (
@@ -153,35 +232,9 @@ export function IssueAttachments({
             </AttachmentActions>
           </Attachment>
         ))}
-
-        <Attachment
-          state={uploading ? "uploading" : "idle"}
-          orientation="vertical"
-          size="sm"
-        >
-          <AttachmentTrigger
-            disabled={uploading}
-            onClick={() => inputRef.current?.click()}
-          />
-          <AttachmentMedia>
-            <Upload />
-          </AttachmentMedia>
-          <AttachmentContent>
-            <AttachmentTitle>
-              {uploading ? "Uploading..." : "Add file"}
-            </AttachmentTitle>
-            <AttachmentDescription>Up to 10MB</AttachmentDescription>
-          </AttachmentContent>
-        </Attachment>
       </AttachmentGroup>
 
-      <input
-        ref={inputRef}
-        type="file"
-        className="hidden"
-        disabled={uploading}
-        onChange={(e) => handleFiles(e.target.files)}
-      />
+      {hiddenInput}
     </div>
   )
 }

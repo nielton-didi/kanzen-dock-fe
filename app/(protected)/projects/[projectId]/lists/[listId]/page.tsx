@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   AlertTriangle,
   CircleAlert,
@@ -25,6 +25,7 @@ import {
   ISSUE_TYPES,
 } from "@/components/issues/issue-badges"
 import { CreateIssueDialog } from "@/components/issues/create-issue-dialog"
+import { IssueDetailDialog } from "@/components/issues/issue-detail-dialog"
 import { FilterDropdown } from "@/components/issues/filter-dropdown"
 import { CreateStatusDialog } from "@/components/statuses/create-status-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -39,6 +40,10 @@ import type { Issue, IssuePriority, IssueSeverity, IssueType } from "@/lib/types
 export default function ListPage() {
   const { projectId, listId } = useParams<{ projectId: string; listId: string }>()
   const { workspaces, listsByProject, loading, listsLoading } = useWorkspaceData()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const selectedIssueId = searchParams.get("issue")
 
   const project = workspaces.flatMap((w) => w.projects).find((p) => p.id === projectId)
   const list = listsByProject[projectId]?.find((l) => l.id === listId)
@@ -69,6 +74,27 @@ export default function ListPage() {
     }
     return map
   }, [issues])
+
+  // Flat, visually-ordered list of the issues currently on screen (grouped
+  // by status, in the same order StatusGroup renders them), used to drive
+  // the detail dialog's prev/next chevrons.
+  const orderedIssues = useMemo(
+    () => statuses.flatMap((status) => issuesByStatus.get(status.id) ?? []),
+    [statuses, issuesByStatus]
+  )
+
+  function openIssue(issueId: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("issue", issueId)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  function closeIssueDialog() {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("issue")
+    const qs = params.toString()
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
 
   function toggleStatusCollapsed(statusId: string, open: boolean) {
     setCollapsedStatusIds((prev) => {
@@ -298,7 +324,7 @@ export default function ListPage() {
                 issues={issuesByStatus.get(status.id) ?? []}
                 workspaceMembers={workspace?.members ?? []}
                 listId={listId}
-                projectId={projectId}
+                onIssueOpen={openIssue}
                 open={!collapsedStatusIds.has(status.id)}
                 onOpenChange={(open) => toggleStatusCollapsed(status.id, open)}
                 onIssueCreated={(issue) => setIssues((prev) => [issue, ...prev])}
@@ -327,6 +353,23 @@ export default function ListPage() {
           </div>
         )}
       </div>
+
+      <IssueDetailDialog
+        issueId={selectedIssueId}
+        issues={orderedIssues}
+        statuses={statuses}
+        workspaceMembers={workspace?.members ?? []}
+        onOpenChange={(open) => {
+          if (!open) closeIssueDialog()
+        }}
+        onNavigate={openIssue}
+        onUpdated={(updated) =>
+          setIssues((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
+        }
+        onDeleted={(issueId) =>
+          setIssues((prev) => prev.filter((i) => i.id !== issueId))
+        }
+      />
     </div>
   )
 }
