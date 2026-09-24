@@ -13,11 +13,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import type { WorkItem, Status, WorkspaceMember } from "@/lib/types"
+import type { FieldDefinition, WorkItem, Status, WorkspaceMember } from "@/lib/types"
 
 export function StatusGroup({
   status,
   statuses,
+  fields,
   workItems,
   workspaceMembers,
   listId,
@@ -30,6 +31,7 @@ export function StatusGroup({
 }: {
   status: Status
   statuses: Status[]
+  fields: FieldDefinition[]
   workItems: WorkItem[]
   workspaceMembers: WorkspaceMember[]
   listId: string
@@ -58,7 +60,13 @@ export function StatusGroup({
           <span className="text-sm font-medium">{status.name}</span>
           <span className="text-xs text-muted-foreground">{workItems.length}</span>
         </CollapsibleTrigger>
-        <CreateWorkItemDialog listId={listId} statusId={status.id} onCreated={onWorkItemCreated}>
+        <CreateWorkItemDialog
+          listId={listId}
+          statusId={status.id}
+          fields={fields}
+          workspaceMembers={workspaceMembers}
+          onCreated={onWorkItemCreated}
+        >
           <Button variant="ghost" size="icon-sm">
             <Plus />
             <span className="sr-only">Add work item to {status.name}</span>

@@ -24,6 +24,10 @@ import {
   WORK_ITEM_SEVERITIES,
   WORK_ITEM_TYPES,
 } from "@/components/work-items/work-item-badges"
+import {
+  CustomFieldFilters,
+  type CustomFieldFilterState,
+} from "@/components/custom-fields/custom-field-filters"
 import { CreateWorkItemDialog } from "@/components/work-items/create-work-item-dialog"
 import { WorkItemDetailDialog } from "@/components/work-items/work-item-detail-dialog"
 import { FilterDropdown } from "@/components/work-items/filter-dropdown"
@@ -33,8 +37,10 @@ import { Button } from "@/components/ui/button"
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Spinner } from "@/components/ui/spinner"
 import { useWorkspaceData } from "@/contexts/workspace-context"
+import { useListCustomFields } from "@/hooks/use-list-custom-fields"
 import { useListStatuses } from "@/hooks/use-list-statuses"
 import { api } from "@/lib/api"
+import { customFieldFilterParams } from "@/lib/custom-fields"
 import type { WorkItem, WorkItemPriority, WorkItemSeverity, WorkItemType } from "@/lib/types"
 
 export default function ListPage() {
@@ -52,6 +58,8 @@ export default function ListPage() {
     : undefined
 
   const { statuses, setStatuses } = useListStatuses(list?.id)
+  const { fields } = useListCustomFields(list?.id)
+  const workspaceMembers = useMemo(() => workspace?.members ?? [], [workspace])
 
   const [workItems, setWorkItems] = useState<WorkItem[]>([])
   const [workItemsLoading, setWorkItemsLoading] = useState(false)
@@ -61,6 +69,7 @@ export default function ListPage() {
   const [severityFilter, setSeverityFilter] = useState<WorkItemSeverity[]>([])
   const [priorityFilter, setPriorityFilter] = useState<WorkItemPriority[]>([])
   const [assigneeFilter, setAssigneeFilter] = useState<string[]>([])
+  const [customFieldFilter, setCustomFieldFilter] = useState<CustomFieldFilterState>({})
   const [collapsedStatusIds, setCollapsedStatusIds] = useState<Set<string>>(
     () => new Set()
   )
@@ -111,6 +120,7 @@ export default function ListPage() {
     setSeverityFilter([])
     setPriorityFilter([])
     setAssigneeFilter([])
+    setCustomFieldFilter({})
   }
 
   useEffect(() => {
@@ -123,6 +133,7 @@ export default function ListPage() {
     severityFilter.forEach((v) => params.append("severity", v))
     priorityFilter.forEach((v) => params.append("priority", v))
     assigneeFilter.forEach((v) => params.append("assigned_to", v))
+    customFieldFilterParams(customFieldFilter).forEach((v) => params.append("cf", v))
     const qs = params.toString()
 
     // setWorkItemsLoading/setWorkItemsError are deferred into the .then() below
@@ -149,7 +160,15 @@ export default function ListPage() {
     return () => {
       cancelled = true
     }
-  }, [list, typeFilter, statusFilter, severityFilter, priorityFilter, assigneeFilter])
+  }, [
+    list,
+    typeFilter,
+    statusFilter,
+    severityFilter,
+    priorityFilter,
+    assigneeFilter,
+    customFieldFilter,
+  ])
 
   if (loading || (listsLoading && !list)) {
     return (
@@ -184,7 +203,8 @@ export default function ListPage() {
     statusFilter.length > 0 ||
     severityFilter.length > 0 ||
     priorityFilter.length > 0 ||
-    assigneeFilter.length > 0
+    assigneeFilter.length > 0 ||
+    Object.keys(customFieldFilter).length > 0
 
   return (
     <div className="flex w-full flex-1 flex-col gap-4">
@@ -211,6 +231,8 @@ export default function ListPage() {
             </Button>
             <CreateWorkItemDialog
               listId={list.id}
+              fields={fields}
+              workspaceMembers={workspaceMembers}
               onCreated={(workItem) => setWorkItems((prev) => [workItem, ...prev])}
             >
               <Button variant="primary">
@@ -268,6 +290,13 @@ export default function ListPage() {
           />
         )}
 
+        <CustomFieldFilters
+          fields={fields}
+          members={workspaceMembers}
+          value={customFieldFilter}
+          onValueChange={setCustomFieldFilter}
+        />
+
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             <X />
@@ -319,6 +348,7 @@ export default function ListPage() {
                 key={status.id}
                 status={status}
                 statuses={statuses}
+                fields={fields}
                 workItems={workItemsByStatus.get(status.id) ?? []}
                 workspaceMembers={workspace?.members ?? []}
                 listId={listId}
@@ -356,7 +386,8 @@ export default function ListPage() {
         workItemId={selectedWorkItemId}
         workItems={orderedWorkItems}
         statuses={statuses}
-        workspaceMembers={workspace?.members ?? []}
+        fields={fields}
+        workspaceMembers={workspaceMembers}
         onOpenChange={(open) => {
           if (!open) closeWorkItemDialog()
         }}

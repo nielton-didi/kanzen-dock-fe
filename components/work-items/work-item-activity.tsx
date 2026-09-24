@@ -5,8 +5,15 @@ import {
   WORK_ITEM_SEVERITIES,
   WORK_ITEM_TYPES,
 } from "@/components/work-items/work-item-badges"
+import { customFieldHistoryId, formatHistoryValue } from "@/lib/custom-fields"
 import { formatDay } from "@/lib/dates"
-import type { Attachment, WorkItemHistoryEntry, User, WorkspaceMember } from "@/lib/types"
+import type {
+  Attachment,
+  FieldDefinition,
+  WorkItemHistoryEntry,
+  User,
+  WorkspaceMember,
+} from "@/lib/types"
 
 function formatFieldName(field: string) {
   return field.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
@@ -59,13 +66,39 @@ function formatValue(field: string, value: string | null) {
   return value
 }
 
+/** `cf:<fieldId>` rows: values are JSON-encoded ids, resolved through the
+ * list's current field definitions. */
+function customFieldHistoryText(
+  actor: string,
+  field: FieldDefinition | undefined,
+  entry: WorkItemHistoryEntry,
+  workspaceMembers: WorkspaceMember[]
+) {
+  // Deleted fields aren't in the definitions any more (P0-4 soft-deletes them).
+  if (!field) return `${actor} changed a deleted field`
+  if (field.kind === "checkbox") {
+    return `${actor} ${entry.new_value === "true" ? "checked" : "unchecked"} ${field.name}`
+  }
+  const from = formatHistoryValue(field, entry.old_value, workspaceMembers)
+  const to = formatHistoryValue(field, entry.new_value, workspaceMembers)
+  if (to === null) return `${actor} cleared ${field.name}`
+  if (from === null) return `${actor} set ${field.name} to ${to}`
+  return `${actor} changed ${field.name} from ${from} to ${to}`
+}
+
 function historyText(
   entry: WorkItemHistoryEntry,
+  fields: FieldDefinition[],
   currentUserId: string | undefined,
   workspaceMembers: WorkspaceMember[]
 ) {
   const actor = actorLabel(entry.changer, currentUserId)
   if (entry.field_name === "created") return `${actor} created this work item`
+  const fieldId = customFieldHistoryId(entry.field_name)
+  if (fieldId !== null) {
+    const field = fields.find((f) => f.id === fieldId)
+    return customFieldHistoryText(actor, field, entry, workspaceMembers)
+  }
   if (entry.field_name === "assigned_to") {
     if (!entry.new_value) return `${actor} unassigned this work item`
     return `${actor} assigned this to ${resolveUserLabel(entry.new_value, currentUserId, workspaceMembers)}`
@@ -83,11 +116,13 @@ type ActivityItem =
 export function WorkItemActivity({
   history,
   attachments,
+  fields,
   workspaceMembers,
   currentUserId,
 }: {
   history?: WorkItemHistoryEntry[]
   attachments: Attachment[]
+  fields: FieldDefinition[]
   workspaceMembers: WorkspaceMember[]
   currentUserId?: string
 }) {
@@ -119,7 +154,7 @@ export function WorkItemActivity({
               <span className="mt-1.5 size-1 shrink-0 rounded-full bg-subtle-foreground" />
               <span>
                 {item.kind === "history"
-                  ? historyText(item.entry, currentUserId, workspaceMembers)
+                  ? historyText(item.entry, fields, currentUserId, workspaceMembers)
                   : `${actorLabel(item.attachment.uploader, currentUserId)} uploaded a file`}
               </span>
             </div>
