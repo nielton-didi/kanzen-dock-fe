@@ -81,6 +81,7 @@ export function StatusGroup({
                 <span className="justify-self-center">Status</span>
                 <span className="justify-self-center">Severity</span>
                 <span className="justify-self-center">Priority</span>
+                <span className="justify-self-center">Due</span>
                 <span className="justify-self-center">Assignee</span>
                 <span />
               </div>

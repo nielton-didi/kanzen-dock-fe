@@ -5,6 +5,7 @@ import {
   WORK_ITEM_SEVERITIES,
   WORK_ITEM_TYPES,
 } from "@/components/work-items/work-item-badges"
+import { formatDay } from "@/lib/dates"
 import type { Attachment, WorkItemHistoryEntry, User, WorkspaceMember } from "@/lib/types"
 
 function formatFieldName(field: string) {
@@ -53,6 +54,8 @@ function formatValue(field: string, value: string | null) {
   if (field === "priority") {
     return WORK_ITEM_PRIORITIES.find((p) => p.value === value)?.label ?? value
   }
+  // Stored as YYYY-MM-DD calendar days.
+  if (field === "start_date" || field === "due_date") return formatDay(value)
   return value
 }
 

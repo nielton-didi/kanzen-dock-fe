@@ -1,3 +1,11 @@
+import {
+  Minus,
+  OctagonAlert,
+  SignalHigh,
+  SignalLow,
+  SignalMedium,
+  type LucideIcon,
+} from "lucide-react"
 import { cn } from "cn"
 
 import { Badge } from "@/components/ui/badge"
@@ -44,9 +52,11 @@ export const WORK_ITEM_SEVERITIES: { value: WorkItemSeverity; label: string }[] 
 ]
 
 export const WORK_ITEM_PRIORITIES: { value: WorkItemPriority; label: string }[] = [
+  { value: "urgent", label: "Urgent" },
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
+  { value: "none", label: "No priority" },
 ]
 
 export const STATUS_COLOR_CLASSNAMES: Record<StatusColor, string> = {
@@ -89,10 +99,13 @@ const SEVERITY_CLASSNAMES: Record<WorkItemSeverity, string> = {
   low: "bg-muted text-subtle-foreground",
 }
 
-const PRIORITY_CLASSNAMES: Record<WorkItemPriority, string> = {
-  high: "bg-warning-subtle text-warning",
-  medium: "bg-muted text-muted-foreground",
-  low: "bg-muted text-subtle-foreground",
+// Priority is shown as an icon, colored only where it signals risk (§3.4).
+const PRIORITY_ICONS: Record<WorkItemPriority, { icon: LucideIcon; className: string }> = {
+  urgent: { icon: OctagonAlert, className: "text-danger" },
+  high: { icon: SignalHigh, className: "text-warning" },
+  medium: { icon: SignalMedium, className: "text-muted-foreground" },
+  low: { icon: SignalLow, className: "text-muted-foreground" },
+  none: { icon: Minus, className: "text-subtle-foreground" },
 }
 
 const TYPE_LABELS = Object.fromEntries(
@@ -165,23 +178,44 @@ export function WorkItemSeverityBadge({
   )
 }
 
-export function WorkItemPriorityBadge({
+export function WorkItemPriorityIcon({
   priority,
   className,
 }: {
   priority: WorkItemPriority
   className?: string
 }) {
+  const { icon: Icon, className: colorClassName } = PRIORITY_ICONS[priority]
+  return <Icon className={cn("size-3.5 shrink-0", colorClassName, className)} />
+}
+
+/** Icon + label. With `compact`, "No priority" shows just the dash (label kept for screen readers). */
+export function WorkItemPriorityLabel({
+  priority,
+  compact,
+  className,
+}: {
+  priority: WorkItemPriority
+  compact?: boolean
+  className?: string
+}) {
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "border-transparent",
-        PRIORITY_CLASSNAMES[priority],
-        className
-      )}
-    >
-      {PRIORITY_LABELS[priority]}
-    </Badge>
+    <span className={cn("inline-flex items-center gap-1.5", className)}>
+      <WorkItemPriorityIcon priority={priority} />
+      <span
+        className={cn(
+          priority === "none" && "text-subtle-foreground",
+          compact && priority === "none" && "sr-only"
+        )}
+      >
+        {PRIORITY_LABELS[priority]}
+      </span>
+    </span>
   )
 }
+
+/** Menu options with the priority icon next to each label. */
+export const WORK_ITEM_PRIORITY_OPTIONS = WORK_ITEM_PRIORITIES.map((p) => ({
+  value: p.value,
+  label: <WorkItemPriorityLabel priority={p.value} />,
+}))

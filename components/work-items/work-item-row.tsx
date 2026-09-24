@@ -1,19 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { CircleAlert, Trash2, UserRound } from "lucide-react"
+import { CalendarDays, CircleAlert, Trash2, UserRound } from "lucide-react"
 import { cn } from "cn"
 
 import {
-  WORK_ITEM_PRIORITIES,
+  WORK_ITEM_PRIORITY_OPTIONS,
   WORK_ITEM_SEVERITIES,
   WORK_ITEM_TYPES,
-  WorkItemPriorityBadge,
+  WorkItemPriorityLabel,
   WorkItemSeverityBadge,
   WorkItemStatusBadge,
   WorkItemTypeBadge,
   STATUS_SWATCH_CLASSNAMES,
 } from "@/components/work-items/work-item-badges"
+import { WorkItemDatePicker } from "@/components/work-items/work-item-date-picker"
 import { WorkItemFieldMenu } from "@/components/work-items/work-item-field-menu"
 import { WorkItemStatusMenu } from "@/components/work-items/work-item-status-menu"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -31,16 +32,17 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
-import type { WorkItem, Status, WorkspaceMember } from "@/lib/types"
+import { toDayKey } from "@/lib/dates"
+import { isOpenWork, type WorkItem, type Status, type WorkspaceMember } from "@/lib/types"
 
 /** Shared column widths so the header row and every work item row line up.
- * Name gets half the row (weighted equal to the sum of the five data
+ * Name gets half the row (weighted equal to the sum of the six data
  * columns); the leading status-icon and trailing delete columns are
  * fixed icon-only widths. */
 export const WORK_ITEM_ROW_COLUMNS =
-  "grid grid-cols-[1.5rem_minmax(0,5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-3"
+  "grid grid-cols-[1.5rem_minmax(0,6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-3"
 
-type EditableField = "type" | "severity" | "priority" | "assigned_to"
+type EditableField = "type" | "severity" | "priority" | "due_date" | "assigned_to"
 
 export function WorkItemRow({
   workItem,
@@ -194,17 +196,30 @@ export function WorkItemRow({
 
       <WorkItemFieldMenu
         value={workItem.priority}
-        options={WORK_ITEM_PRIORITIES}
+        options={WORK_ITEM_PRIORITY_OPTIONS}
         disabled={updatingField === "priority"}
         onValueChange={(v) => {
           if (v !== workItem.priority) updateField("priority", v)
         }}
       >
-        <WorkItemPriorityBadge
+        <WorkItemPriorityLabel
           priority={workItem.priority}
-          className={cn("w-fit", fieldErrors.priority && "ring-1 ring-destructive")}
+          compact
+          className={cn("px-1 py-0.5", fieldErrors.priority && "rounded-md ring-1 ring-destructive")}
         />
       </WorkItemFieldMenu>
+
+      <WorkItemDatePicker
+        label="Due date"
+        value={workItem.due_date ? toDayKey(workItem.due_date) : null}
+        min={workItem.start_date ? toDayKey(workItem.start_date) : null}
+        highlightDue={isOpenWork(workItem)}
+        loading={updatingField === "due_date"}
+        error={Boolean(fieldErrors.due_date)}
+        onChange={(v) => updateField("due_date", v)}
+        placeholder={<CalendarDays className="size-3.5 text-subtle-foreground" />}
+        className="justify-self-center"
+      />
 
       <WorkItemFieldMenu
         value={workItem.assigned_to ?? "unassigned"}

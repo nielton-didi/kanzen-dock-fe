@@ -60,7 +60,7 @@ export interface List {
 
 export type WorkItemType = "bug" | "task"
 export type WorkItemSeverity = "critical" | "high" | "medium" | "low"
-export type WorkItemPriority = "high" | "medium" | "low"
+export type WorkItemPriority = "urgent" | "high" | "medium" | "low" | "none"
 
 export type StatusCategory = "not_started" | "active" | "done" | "closed"
 export type StatusColor =
@@ -120,6 +120,11 @@ export interface WorkItem {
   // Only valid (non-null) when `type` is "bug".
   severity: WorkItemSeverity | null
   priority: WorkItemPriority
+  // Calendar days. The API returns midnight-UTC ISO strings; read them with
+  // lib/dates.ts (`toDayKey`), never `new Date()`, or west-of-UTC users see
+  // the previous day.
+  start_date: string | null
+  due_date: string | null
   assigned_to?: string | null
   reported_by: string
   assignee?: User | null
@@ -130,4 +135,9 @@ export interface WorkItem {
   history?: WorkItemHistoryEntry[]
   created_at: string
   updated_at: string
+}
+
+/** Not in a done/closed status. Only open work is flagged as overdue. */
+export function isOpenWork(workItem: WorkItem): boolean {
+  return workItem.status.category !== "done" && workItem.status.category !== "closed"
 }

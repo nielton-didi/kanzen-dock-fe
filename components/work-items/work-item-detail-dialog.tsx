@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import {
   AlertTriangle,
+  CalendarClock,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   ChevronUp,
@@ -18,15 +20,16 @@ import {
 } from "lucide-react"
 
 import {
-  WORK_ITEM_PRIORITIES,
+  WORK_ITEM_PRIORITY_OPTIONS,
   WORK_ITEM_SEVERITIES,
   WORK_ITEM_TYPES,
-  WorkItemPriorityBadge,
+  WorkItemPriorityLabel,
   WorkItemSeverityBadge,
   WorkItemTypeBadge,
 } from "@/components/work-items/work-item-badges"
 import { WorkItemActivity } from "@/components/work-items/work-item-activity"
 import { WorkItemAttachments } from "@/components/work-items/work-item-attachments"
+import { WorkItemDatePicker } from "@/components/work-items/work-item-date-picker"
 import { WorkItemFieldMenu } from "@/components/work-items/work-item-field-menu"
 import { WorkItemStatusMenu } from "@/components/work-items/work-item-status-menu"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -52,7 +55,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/hooks/use-auth"
 import { useWorkItem } from "@/hooks/use-work-item"
 import { api } from "@/lib/api"
-import type { WorkItem, Status, WorkspaceMember } from "@/lib/types"
+import { toDayKey } from "@/lib/dates"
+import { isOpenWork, type WorkItem, type Status, type WorkspaceMember } from "@/lib/types"
 
 function initials(name?: string, email?: string) {
   return (name ?? email ?? "?").charAt(0).toUpperCase()
@@ -426,14 +430,39 @@ export function WorkItemDetailDialog({
                   <PropertyRow icon={<Flag className="size-4" />} label="Priority">
                     <WorkItemFieldMenu
                       value={workItem.priority}
-                      options={WORK_ITEM_PRIORITIES}
+                      options={WORK_ITEM_PRIORITY_OPTIONS}
                       disabled={updatingField === "priority"}
                       onValueChange={(v) => {
                         if (v !== workItem.priority) updateWorkItem("priority", v)
                       }}
                     >
-                      <WorkItemPriorityBadge priority={workItem.priority} className="w-fit" />
+                      <WorkItemPriorityLabel priority={workItem.priority} />
                     </WorkItemFieldMenu>
+                  </PropertyRow>
+
+                  <PropertyRow icon={<CalendarDays className="size-4" />} label="Start date">
+                    <WorkItemDatePicker
+                      label="Start date"
+                      value={workItem.start_date ? toDayKey(workItem.start_date) : null}
+                      max={workItem.due_date ? toDayKey(workItem.due_date) : null}
+                      loading={updatingField === "start_date"}
+                      onChange={(v) => updateWorkItem("start_date", v)}
+                      placeholder={<span className="text-muted-foreground">Not set</span>}
+                      className="-mx-1"
+                    />
+                  </PropertyRow>
+
+                  <PropertyRow icon={<CalendarClock className="size-4" />} label="Due date">
+                    <WorkItemDatePicker
+                      label="Due date"
+                      value={workItem.due_date ? toDayKey(workItem.due_date) : null}
+                      min={workItem.start_date ? toDayKey(workItem.start_date) : null}
+                      highlightDue={isOpenWork(workItem)}
+                      loading={updatingField === "due_date"}
+                      onChange={(v) => updateWorkItem("due_date", v)}
+                      placeholder={<span className="text-muted-foreground">Not set</span>}
+                      className="-mx-1"
+                    />
                   </PropertyRow>
 
                   {workItem.type === "bug" && (
