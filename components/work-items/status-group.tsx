@@ -5,7 +5,7 @@ import { cn } from "cn"
 
 import { CreateWorkItemDialog } from "@/components/work-items/create-work-item-dialog"
 import { InlineAddWorkItem } from "@/components/work-items/inline-add-work-item"
-import { WorkItemRow, WORK_ITEM_ROW_COLUMNS } from "@/components/work-items/work-item-row"
+import { WorkItemRow, workItemRowColumns } from "@/components/work-items/work-item-row"
 import { STATUS_SWATCH_CLASSNAMES } from "@/components/work-items/work-item-badges"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,11 +13,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import type { WorkItem, Status, WorkspaceMember } from "@/lib/types"
+import type { FieldDefinition, WorkItem, Status, WorkspaceMember } from "@/lib/types"
 
 export function StatusGroup({
   status,
   statuses,
+  fields,
+  rowFields,
   workItems,
   workspaceMembers,
   listId,
@@ -30,6 +32,9 @@ export function StatusGroup({
 }: {
   status: Status
   statuses: Status[]
+  fields: FieldDefinition[]
+  /** Custom fields the user shows as row columns, in column order. */
+  rowFields: FieldDefinition[]
   workItems: WorkItem[]
   workspaceMembers: WorkspaceMember[]
   listId: string
@@ -58,7 +63,13 @@ export function StatusGroup({
           <span className="text-sm font-medium">{status.name}</span>
           <span className="text-xs text-muted-foreground">{workItems.length}</span>
         </CollapsibleTrigger>
-        <CreateWorkItemDialog listId={listId} statusId={status.id} onCreated={onWorkItemCreated}>
+        <CreateWorkItemDialog
+          listId={listId}
+          statusId={status.id}
+          fields={fields}
+          workspaceMembers={workspaceMembers}
+          onCreated={onWorkItemCreated}
+        >
           <Button variant="ghost" size="icon-sm">
             <Plus />
             <span className="sr-only">Add work item to {status.name}</span>
@@ -71,16 +82,19 @@ export function StatusGroup({
             <>
               <div
                 className={cn(
-                  WORK_ITEM_ROW_COLUMNS,
+                  workItemRowColumns(rowFields.length),
                   "px-2 pb-1 text-xs font-medium text-muted-foreground"
                 )}
               >
                 <span />
                 <span>Name</span>
-                <span className="justify-self-center">Type</span>
                 <span className="justify-self-center">Status</span>
-                <span className="justify-self-center">Severity</span>
                 <span className="justify-self-center">Priority</span>
+                {rowFields.map((field) => (
+                  <span key={field.id} className="truncate">
+                    {field.name}
+                  </span>
+                ))}
                 <span className="justify-self-center">Due</span>
                 <span className="justify-self-center">Assignee</span>
                 <span />
@@ -95,6 +109,7 @@ export function StatusGroup({
                     workspaceMembers={workspaceMembers}
                     onDeleted={onWorkItemDeleted}
                     onUpdated={onWorkItemUpdated}
+                    rowFields={rowFields}
                   />
                 ))}
               </div>

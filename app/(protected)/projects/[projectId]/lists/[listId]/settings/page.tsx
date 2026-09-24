@@ -31,10 +31,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
+import { FieldEditor } from "@/components/custom-fields/field-editor"
 import { StatusEditor } from "@/components/statuses/status-editor"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useWorkspaceData } from "@/contexts/workspace-context"
+import { useAuth } from "@/hooks/use-auth"
+import { useListCustomFields } from "@/hooks/use-list-custom-fields"
 import { useListStatuses } from "@/hooks/use-list-statuses"
+import { getWorkspaceRole } from "@/lib/types"
 
 export default function ListSettingsPage() {
   const { projectId, listId } = useParams<{ projectId: string; listId: string }>()
@@ -49,6 +53,9 @@ export default function ListSettingsPage() {
     : undefined
 
   const { statuses, setStatuses } = useListStatuses(list?.id)
+  const { fields, setFields, loading: fieldsLoading } = useListCustomFields(list?.id)
+  const { user, loading: authLoading } = useAuth()
+  const role = workspace ? getWorkspaceRole(workspace, user?.id) : null
 
   const [name, setName] = useState(list?.name ?? "")
   const [targetProjectId, setTargetProjectId] = useState(projectId)
@@ -151,6 +158,7 @@ export default function ListSettingsPage() {
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="statuses">Statuses</TabsTrigger>
+          <TabsTrigger value="fields">Fields</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="flex flex-col gap-4 pt-4">
@@ -267,6 +275,30 @@ export default function ListSettingsPage() {
             </CardHeader>
             <CardContent>
               <StatusEditor listId={list.id} statuses={statuses} setStatuses={setStatuses} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="fields" className="pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fields</CardTitle>
+              <CardDescription>
+                Custom fields on this list&apos;s work items. Drag to reorder;
+                the order is used in the work item view and forms.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {authLoading || (fieldsLoading && fields.length === 0) ? (
+                <Spinner className="text-muted-foreground" />
+              ) : (
+                <FieldEditor
+                  listId={list.id}
+                  fields={fields}
+                  setFields={setFields}
+                  canEdit={role === "owner" || role === "admin"}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>

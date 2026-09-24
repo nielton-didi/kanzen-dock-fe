@@ -24,7 +24,7 @@ interface WorkspaceContextValue {
   refetch: () => Promise<void>
   createWorkspace: (name: string) => Promise<Workspace>
   createProject: (workspaceId: string, name: string) => Promise<Project>
-  createList: (projectId: string, name: string) => Promise<List>
+  createList: (projectId: string, name: string, templateKey?: string) => Promise<List>
   updateList: (
     listId: string,
     currentProjectId: string,
@@ -153,16 +153,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     return project
   }, [])
 
-  const createList = useCallback(async (projectId: string, name: string) => {
-    const list = await api.post<List>(`/projects/${projectId}/lists`, {
-      name,
-    })
-    setListsByProject((prev) => ({
-      ...prev,
-      [projectId]: [...(prev[projectId] ?? []), list],
-    }))
-    return list
-  }, [])
+  const createList = useCallback(
+    async (projectId: string, name: string, templateKey?: string) => {
+      // No key → the BE's default template (General tasks).
+      const list = await api.post<List>(`/projects/${projectId}/lists`, {
+        name,
+        ...(templateKey ? { template_key: templateKey } : {}),
+      })
+      setListsByProject((prev) => ({
+        ...prev,
+        [projectId]: [...(prev[projectId] ?? []), list],
+      }))
+      return list
+    },
+    []
+  )
 
   const updateList = useCallback(
     async (

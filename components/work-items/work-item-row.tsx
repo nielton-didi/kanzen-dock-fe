@@ -6,14 +6,11 @@ import { cn } from "cn"
 
 import {
   WORK_ITEM_PRIORITY_OPTIONS,
-  WORK_ITEM_SEVERITIES,
-  WORK_ITEM_TYPES,
   WorkItemPriorityLabel,
-  WorkItemSeverityBadge,
   WorkItemStatusBadge,
-  WorkItemTypeBadge,
   STATUS_SWATCH_CLASSNAMES,
 } from "@/components/work-items/work-item-badges"
+import { CustomFieldDisplay } from "@/components/custom-fields/custom-field-display"
 import { WorkItemDatePicker } from "@/components/work-items/work-item-date-picker"
 import { WorkItemFieldMenu } from "@/components/work-items/work-item-field-menu"
 import { WorkItemStatusMenu } from "@/components/work-items/work-item-status-menu"
@@ -32,17 +29,35 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
+import { readFieldValue } from "@/lib/custom-fields"
 import { toDayKey } from "@/lib/dates"
-import { isOpenWork, type WorkItem, type Status, type WorkspaceMember } from "@/lib/types"
+import {
+  isOpenWork,
+  type FieldDefinition,
+  type Status,
+  type WorkItem,
+  type WorkspaceMember,
+} from "@/lib/types"
 
-/** Shared column widths so the header row and every work item row line up.
- * Name gets half the row (weighted equal to the sum of the six data
- * columns); the leading status-icon and trailing delete columns are
- * fixed icon-only widths. */
-export const WORK_ITEM_ROW_COLUMNS =
-  "grid grid-cols-[1.5rem_minmax(0,6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-3"
+/** Shared column widths so the header row and every work item row line up,
+ * indexed by how many custom fields the user shows in rows (0–3, D6). Name
+ * is weighted like the four built-in data columns together; custom field
+ * columns go between Priority and Due. The leading status-icon and trailing
+ * delete columns are fixed icon-only widths. Literal strings so Tailwind
+ * picks them up. */
+const WORK_ITEM_ROW_GRIDS = [
+  "grid-cols-[1.5rem_minmax(0,4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem]",
+  "grid-cols-[1.5rem_minmax(0,4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem]",
+  "grid-cols-[1.5rem_minmax(0,4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem]",
+  "grid-cols-[1.5rem_minmax(0,4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1.25fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem]",
+] as const
 
-type EditableField = "type" | "severity" | "priority" | "due_date" | "assigned_to"
+export function workItemRowColumns(rowFieldCount: number) {
+  const grid = WORK_ITEM_ROW_GRIDS[Math.min(rowFieldCount, WORK_ITEM_ROW_GRIDS.length - 1)]
+  return cn("grid items-center gap-3", grid)
+}
+
+type EditableField = "priority" | "due_date" | "assigned_to"
 
 export function WorkItemRow({
   workItem,
@@ -51,11 +66,14 @@ export function WorkItemRow({
   workspaceMembers,
   onDeleted,
   onUpdated,
+  rowFields = [],
 }: {
   workItem: WorkItem
   onOpen: (workItemId: string) => void
   statuses: Status[]
   workspaceMembers: WorkspaceMember[]
+  /** Custom fields the user shows as row columns, in column order. */
+  rowFields?: FieldDefinition[]
   onDeleted: (workItemId: string) => void
   onUpdated: (workItem: WorkItem) => void
 }) {
@@ -123,7 +141,7 @@ export function WorkItemRow({
         if (event.key === "Enter") onOpen(workItem.id)
       }}
       className={cn(
-        WORK_ITEM_ROW_COLUMNS,
+        workItemRowColumns(rowFields.length),
         "cursor-pointer rounded-md px-2 py-2 text-sm outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
       )}
     >
@@ -145,20 +163,6 @@ export function WorkItemRow({
       </WorkItemStatusMenu>
       <span className="truncate font-medium">{workItem.title}</span>
 
-      <WorkItemFieldMenu
-        value={workItem.type}
-        options={WORK_ITEM_TYPES}
-        disabled={updatingField === "type"}
-        onValueChange={(v) => {
-          if (v !== workItem.type) updateField("type", v)
-        }}
-      >
-        <WorkItemTypeBadge
-          type={workItem.type}
-          className={cn("w-fit", fieldErrors.type && "ring-1 ring-destructive")}
-        />
-      </WorkItemFieldMenu>
-
       <WorkItemStatusMenu
         status={workItem.status}
         statuses={statuses}
@@ -171,28 +175,6 @@ export function WorkItemRow({
           className={cn("w-fit", statusError && "ring-1 ring-destructive")}
         />
       </WorkItemStatusMenu>
-
-      {workItem.type === "bug" ? (
-        <WorkItemFieldMenu
-          value={workItem.severity ?? "medium"}
-          options={WORK_ITEM_SEVERITIES}
-          disabled={updatingField === "severity"}
-          onValueChange={(v) => {
-            if (v !== workItem.severity) updateField("severity", v)
-          }}
-        >
-          {workItem.severity ? (
-            <WorkItemSeverityBadge
-              severity={workItem.severity}
-              className={cn("w-fit", fieldErrors.severity && "ring-1 ring-destructive")}
-            />
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          )}
-        </WorkItemFieldMenu>
-      ) : (
-        <span className="justify-self-center text-muted-foreground">—</span>
-      )}
 
       <WorkItemFieldMenu
         value={workItem.priority}
@@ -208,6 +190,17 @@ export function WorkItemRow({
           className={cn("px-1 py-0.5", fieldErrors.priority && "rounded-md ring-1 ring-destructive")}
         />
       </WorkItemFieldMenu>
+
+      {rowFields.map((field) => (
+        <span key={field.id} className="flex min-w-0 items-center overflow-hidden">
+          <CustomFieldDisplay
+            field={field}
+            value={readFieldValue(field, workItem.custom_fields[field.id], workspaceMembers)}
+            members={workspaceMembers}
+            compact
+          />
+        </span>
+      ))}
 
       <WorkItemDatePicker
         label="Due date"

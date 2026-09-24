@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 import {
-  AlertTriangle,
   CalendarClock,
   CalendarDays,
   ChevronDown,
@@ -21,12 +20,10 @@ import {
 
 import {
   WORK_ITEM_PRIORITY_OPTIONS,
-  WORK_ITEM_SEVERITIES,
-  WORK_ITEM_TYPES,
   WorkItemPriorityLabel,
-  WorkItemSeverityBadge,
-  WorkItemTypeBadge,
 } from "@/components/work-items/work-item-badges"
+import { CustomFieldInput } from "@/components/custom-fields/custom-field-input"
+import { FieldKindIcon } from "@/components/custom-fields/custom-field-display"
 import { WorkItemActivity } from "@/components/work-items/work-item-activity"
 import { WorkItemAttachments } from "@/components/work-items/work-item-attachments"
 import { WorkItemDatePicker } from "@/components/work-items/work-item-date-picker"
@@ -55,8 +52,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/hooks/use-auth"
 import { useWorkItem } from "@/hooks/use-work-item"
 import { api } from "@/lib/api"
+import { readFieldValue, toPayloadValue } from "@/lib/custom-fields"
 import { toDayKey } from "@/lib/dates"
-import { isOpenWork, type WorkItem, type Status, type WorkspaceMember } from "@/lib/types"
+import {
+  isOpenWork,
+  type CustomFieldValue,
+  type FieldDefinition,
+  type Status,
+  type WorkItem,
+  type WorkspaceMember,
+} from "@/lib/types"
 
 function initials(name?: string, email?: string) {
   return (name ?? email ?? "?").charAt(0).toUpperCase()
@@ -75,7 +80,7 @@ function PropertyRow({
     <div className="flex items-center gap-2 text-sm">
       <div className="flex w-28 shrink-0 items-center gap-1.5 text-muted-foreground">
         {icon}
-        {label}
+        <span className="truncate">{label}</span>
       </div>
       <div className="flex min-w-0 flex-1 items-center">{children}</div>
     </div>
@@ -86,6 +91,7 @@ export function WorkItemDetailDialog({
   workItemId,
   workItems,
   statuses,
+  fields,
   workspaceMembers,
   onOpenChange,
   onNavigate,
@@ -98,6 +104,8 @@ export function WorkItemDetailDialog({
    * prev/next chevrons - must be in the same order they're rendered in. */
   workItems: WorkItem[]
   statuses: Status[]
+  /** The list's custom field definitions, in display order. */
+  fields: FieldDefinition[]
   workspaceMembers: WorkspaceMember[]
   onOpenChange: (open: boolean) => void
   onNavigate: (workItemId: string) => void
@@ -154,11 +162,23 @@ export function WorkItemDetailDialog({
       : null
 
   async function updateWorkItem(field: string, value: string | null) {
+    await saveUpdate(field, { [field]: value })
+  }
+
+  /** Custom fields are a partial merge on the backend: only this key changes. */
+  async function updateCustomField(field: FieldDefinition, value: CustomFieldValue | null) {
+    await saveUpdate(`cf:${field.id}`, {
+      custom_fields: { [field.id]: toPayloadValue(value) },
+    })
+  }
+
+  /** `key` marks which control shows the spinner while the PUT runs. */
+  async function saveUpdate(key: string, body: Record<string, unknown>) {
     if (!workItem) return
-    setUpdatingField(field)
+    setUpdatingField(key)
     setUpdateError(null)
     try {
-      await api.put<WorkItem>(`/work-items/${workItem.id}`, { [field]: value })
+      await api.put<WorkItem>(`/work-items/${workItem.id}`, body)
       // The PUT response doesn't include the nested `list`/`history` this
       // dialog needs, and the update also logs a new history entry - so
       // refetch the full detail response instead of merging the partial one.
@@ -336,29 +356,16 @@ export function WorkItemDetailDialog({
                   </Alert>
                 )}
 
-                <div className="flex flex-col gap-3">
-                  <WorkItemFieldMenu
-                    value={workItem.type}
-                    options={WORK_ITEM_TYPES}
-                    disabled={updatingField === "type"}
-                    onValueChange={(v) => {
-                      if (v !== workItem.type) updateWorkItem("type", v)
-                    }}
-                  >
-                    <WorkItemTypeBadge type={workItem.type} className="w-fit" />
-                  </WorkItemFieldMenu>
-
-                  <input
-                    type="text"
-                    value={titleDraft}
-                    onChange={(e) => setTitleDraft(e.target.value)}
-                    onBlur={handleTitleSave}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") e.currentTarget.blur()
-                    }}
-                    className="-mx-1 rounded-md border-b border-transparent bg-transparent px-1 text-2xl font-semibold tracking-tight outline-none hover:bg-muted/40 focus-visible:border-b-border focus-visible:bg-muted/40"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur()
+                  }}
+                  className="-mx-1 rounded-md border-b border-transparent bg-transparent px-1 text-2xl font-semibold tracking-tight outline-none hover:bg-muted/40 focus-visible:border-b-border focus-visible:bg-muted/40"
+                />
 
                 <div className="flex flex-col gap-3 border-y py-4">
                   <PropertyRow icon={<CircleDot className="size-4" />} label="Status">
@@ -465,20 +472,27 @@ export function WorkItemDetailDialog({
                     />
                   </PropertyRow>
 
-                  {workItem.type === "bug" && (
-                    <PropertyRow icon={<AlertTriangle className="size-4" />} label="Severity">
-                      <WorkItemFieldMenu
-                        value={workItem.severity ?? "medium"}
-                        options={WORK_ITEM_SEVERITIES}
-                        disabled={updatingField === "severity"}
-                        onValueChange={(v) => {
-                          if (v !== workItem.severity) updateWorkItem("severity", v)
-                        }}
-                      >
-                        <WorkItemSeverityBadge severity={workItem.severity} className="w-fit" />
-                      </WorkItemFieldMenu>
+                  {fields.map((field) => (
+                    <PropertyRow
+                      key={field.id}
+                      icon={<FieldKindIcon kind={field.kind} className="size-4" />}
+                      label={field.name}
+                    >
+                      <CustomFieldInput
+                        field={field}
+                        value={readFieldValue(
+                          field,
+                          workItem.custom_fields?.[field.id],
+                          workspaceMembers
+                        )}
+                        members={workspaceMembers}
+                        loading={updatingField === `cf:${field.id}`}
+                        onChange={(v) => updateCustomField(field, v)}
+                        placeholder={<span className="text-muted-foreground">Not set</span>}
+                        className="-mx-1"
+                      />
                     </PropertyRow>
-                  )}
+                  ))}
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -532,6 +546,7 @@ export function WorkItemDetailDialog({
                 <WorkItemActivity
                   history={workItem.history}
                   attachments={workItem.attachments}
+                  fields={fields}
                   workspaceMembers={workspaceMembers}
                   currentUserId={user?.id}
                 />

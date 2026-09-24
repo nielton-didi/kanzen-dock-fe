@@ -58,8 +58,6 @@ export interface List {
   updated_at: string
 }
 
-export type WorkItemType = "bug" | "task"
-export type WorkItemSeverity = "critical" | "high" | "medium" | "low"
 export type WorkItemPriority = "urgent" | "high" | "medium" | "low" | "none"
 
 export type StatusCategory = "not_started" | "active" | "done" | "closed"
@@ -84,6 +82,70 @@ export interface Status {
   position: number
   created_at: string
   updated_at: string
+}
+
+export type FieldKind =
+  | "text"
+  | "number"
+  | "dropdown"
+  | "multi_select"
+  | "date"
+  | "person"
+  | "checkbox"
+  | "url"
+
+/** A dropdown / multi_select choice. Work items store the `id`, never the label. */
+export interface FieldOption {
+  id: string
+  label: string
+  color: StatusColor
+}
+
+/** A per-list custom field (GET /lists/:listId/custom-fields). */
+export interface FieldDefinition {
+  id: string
+  list_id: string
+  name: string
+  kind: FieldKind
+  /** Only dropdown / multi_select have options; `[]` for every other kind. */
+  options: FieldOption[]
+  position: number
+  /** Set when the field is soft-deleted (only listed with `?deleted=true`). */
+  deleted_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** A stored custom field value: text/url/date (`YYYY-MM-DD`)/dropdown option
+ * id/person user id → string, number → number, checkbox → `true`,
+ * multi_select → option ids. Unset is always "key absent", never null. */
+export type CustomFieldValue = string | number | boolean | string[]
+
+/** A list preset from GET /list-templates (D3), copied into a list on create. */
+export interface ListTemplate {
+  key: string
+  name: string
+  description: string
+  /** A lucide icon name (kebab-case). */
+  icon: string
+  statuses: { name: string; category: StatusCategory; color: StatusColor }[]
+  /** Template options have no ids: each list gets its own on create. */
+  fields: {
+    name: string
+    kind: FieldKind
+    options?: { label: string; color?: StatusColor }[]
+  }[]
+  defaultView: { type: "list" | "board"; groupBy: "status" }
+}
+
+/** Maximum custom fields a user can show as columns in list rows (D6). */
+export const MAX_ROW_FIELDS = 3
+
+/** The current user's view settings for one list (GET/PUT /lists/:listId/preferences/me). */
+export interface ListPreference {
+  list_id: string
+  /** Active custom field ids shown as row columns, in column order. */
+  row_field_ids: string[]
 }
 
 export interface Attachment {
@@ -114,11 +176,8 @@ export interface WorkItem {
   title: string
   description?: string
   list_id: string
-  type: WorkItemType
   status_id: string
   status: Status
-  // Only valid (non-null) when `type` is "bug".
-  severity: WorkItemSeverity | null
   priority: WorkItemPriority
   // Calendar days. The API returns midnight-UTC ISO strings; read them with
   // lib/dates.ts (`toDayKey`), never `new Date()`, or west-of-UTC users see
@@ -126,6 +185,9 @@ export interface WorkItem {
   start_date: string | null
   due_date: string | null
   assigned_to?: string | null
+  /** Keyed by field id. Raw from the API: may hold keys for deleted fields,
+   * removed options or ex-members — read it through `readFieldValue`. */
+  custom_fields: Record<string, unknown>
   reported_by: string
   assignee?: User | null
   reporter: User
