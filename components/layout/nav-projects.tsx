@@ -175,7 +175,7 @@ function ProjectNavItem({ project }: { project: Project }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={handleDelete}>
+              <AlertDialogAction variant="danger" onClick={handleDelete}>
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>

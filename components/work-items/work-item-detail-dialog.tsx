@@ -292,7 +292,7 @@ export function WorkItemDetailDialog({
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                      <AlertDialogAction variant="danger" onClick={handleDelete}>
                         Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -502,7 +502,7 @@ export function WorkItemDetailDialog({
                       >
                         Cancel
                       </Button>
-                      <Button
+                      <Button variant="primary"
                         size="sm"
                         onClick={handleDescriptionSave}
                         disabled={savingDescription}

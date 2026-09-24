@@ -113,7 +113,7 @@ export default function ListSettingsPage() {
       <div className="flex w-full flex-1 flex-col gap-4">
         <PageHeader title="List not found" />
         <Card className="flex-1">
-          <CardContent className="flex flex-1 items-center justify-center py-16">
+          <CardContent className="flex flex-1 items-center justify-center py-10">
             <Empty className="border-0">
               <EmptyMedia variant="icon">
                 <ListTodo />
@@ -202,7 +202,7 @@ export default function ListSettingsPage() {
                     </Field>
                   )}
                   <Field orientation="horizontal">
-                    <Button type="submit" disabled={savingGeneral}>
+                    <Button variant="primary" type="submit" disabled={savingGeneral}>
                       {savingGeneral && <Spinner />}
                       Save changes
                     </Button>
@@ -230,7 +230,7 @@ export default function ListSettingsPage() {
               <AlertDialog>
                 <AlertDialogTrigger
                   render={
-                    <Button variant="destructive" className="w-fit" disabled={deleting}>
+                    <Button variant="danger-outline" className="w-fit" disabled={deleting}>
                       Delete list
                     </Button>
                   }
@@ -245,7 +245,7 @@ export default function ListSettingsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                    <AlertDialogAction variant="danger" onClick={handleDelete}>
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>

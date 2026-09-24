@@ -26,10 +26,10 @@ export default function DashboardPage() {
 
   if (!activeWorkspace) {
     return (
-      <div className="flex flex-1 flex-col gap-6">
+      <div className="flex flex-1 flex-col gap-4">
         <PageHeader title="Dashboard" />
         <Card className="flex-1">
-          <CardContent className="flex flex-1 items-center justify-center py-16">
+          <CardContent className="flex flex-1 items-center justify-center py-10">
             <Empty className="border-0">
               <EmptyMedia variant="icon">
                 <FolderKanban />
@@ -39,7 +39,7 @@ export default function DashboardPage() {
                 Workspaces group your projects and team members.
               </EmptyDescription>
               <CreateWorkspaceDialog>
-                <Button className="mt-2">
+                <Button variant="primary" className="mt-2">
                   <Plus />
                   Create workspace
                 </Button>
@@ -67,7 +67,7 @@ export default function DashboardPage() {
   const firstName = user?.user_metadata?.name?.split(" ")[0] ?? user?.email?.split("@")[0]
 
   return (
-    <div className="flex w-full flex-1 flex-col gap-6">
+    <div className="flex w-full flex-1 flex-col gap-4">
       <PageHeader
         title={`Welcome back${firstName ? `, ${firstName}` : ""}`}
         description={`Here's what's happening in ${activeWorkspace.name}.`}
@@ -90,7 +90,7 @@ export default function DashboardPage() {
       </div>
 
       <Card className="flex-1">
-        <CardContent className="flex flex-1 items-center justify-center py-12">
+        <CardContent className="flex flex-1 items-center justify-center py-10">
           {projectCount === 0 ? (
             <Empty className="border-0">
               <EmptyMedia variant="icon">
@@ -101,7 +101,7 @@ export default function DashboardPage() {
                 Projects hold lists like Bugs, Tasks, and Backlog.
               </EmptyDescription>
               <CreateProjectDialog workspaceId={activeWorkspace.id}>
-                <Button className="mt-2">
+                <Button variant="primary" className="mt-2">
                   <Plus />
                   Create project
                 </Button>

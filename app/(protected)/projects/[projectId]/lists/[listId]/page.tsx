@@ -163,7 +163,7 @@ export default function ListPage() {
     return (
       <div className="flex w-full flex-1 flex-col gap-4">
         <PageHeader title="List not found" />
-        <div className="flex flex-1 items-center justify-center py-16">
+        <div className="flex flex-1 items-center justify-center py-10">
           <Empty className="border-0">
             <EmptyMedia variant="icon">
               <ListTodo />
@@ -200,9 +200,7 @@ export default function ListPage() {
         }
         actions={
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
+            <Button variant="ghost" size="icon"
               nativeButton={false}
               render={
                 <Link href={`/projects/${projectId}/lists/${listId}/settings`} />
@@ -215,7 +213,7 @@ export default function ListPage() {
               listId={list.id}
               onCreated={(workItem) => setWorkItems((prev) => [workItem, ...prev])}
             >
-              <Button>
+              <Button variant="primary">
                 <Plus />
                 New work item
               </Button>
@@ -287,11 +285,11 @@ export default function ListPage() {
 
       <div className="flex-1">
         {workItemsLoading ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-10">
             <Spinner className="size-6 text-muted-foreground" />
           </div>
         ) : hasActiveFilters && workItems.length === 0 ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-10">
             <Empty className="border-0">
               <EmptyMedia variant="icon">
                 <ListTodo />
@@ -303,7 +301,7 @@ export default function ListPage() {
             </Empty>
           </div>
         ) : statuses.length === 0 ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-10">
             <Empty className="border-0">
               <EmptyMedia variant="icon">
                 <ListTodo />

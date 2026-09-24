@@ -130,7 +130,7 @@ export function WorkItemDatePicker({
         {value && (
           <Button
             variant="ghost"
-            size="xs"
+            size="sm"
             className="justify-start text-muted-foreground"
             onClick={() => pick(null)}
           >

@@ -221,7 +221,7 @@ export function WorkItemAttachments({
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      variant="destructive"
+                      variant="danger"
                       onClick={() => handleDelete(attachment.id)}
                     >
                       Delete

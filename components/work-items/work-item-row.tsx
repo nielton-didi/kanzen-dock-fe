@@ -287,7 +287,7 @@ export function WorkItemRow({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              variant="destructive"
+              variant="danger"
               disabled={deleting}
               onClick={handleDelete}
             >

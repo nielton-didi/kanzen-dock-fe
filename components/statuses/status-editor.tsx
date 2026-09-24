@@ -292,7 +292,7 @@ export function StatusEditor({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              variant="destructive"
+              variant="danger"
               disabled={!reassignTo || deleting}
               onClick={() =>
                 pendingDelete && attemptDelete(pendingDelete.status, reassignTo)
