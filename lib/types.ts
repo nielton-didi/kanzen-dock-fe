@@ -138,6 +138,16 @@ export interface ListTemplate {
   defaultView: { type: "list" | "board"; groupBy: "status" }
 }
 
+/** Maximum custom fields a user can show as columns in list rows (D6). */
+export const MAX_ROW_FIELDS = 3
+
+/** The current user's view settings for one list (GET/PUT /lists/:listId/preferences/me). */
+export interface ListPreference {
+  list_id: string
+  /** Active custom field ids shown as row columns, in column order. */
+  row_field_ids: string[]
+}
+
 export interface Attachment {
   id: string
   work_item_id: string

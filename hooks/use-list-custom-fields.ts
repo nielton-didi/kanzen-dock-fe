@@ -5,10 +5,17 @@ import { useCallback, useEffect, useState } from "react"
 import { api } from "@/lib/api"
 import type { FieldDefinition } from "@/lib/types"
 
-/** Fetches a list's custom field definitions (ordered by position). */
-export function useListCustomFields(listId: string | undefined) {
+/**
+ * Fetches a list's custom field definitions (ordered by position). With
+ * `deleted`, fetches its soft-deleted fields instead (most recently deleted first).
+ */
+export function useListCustomFields(
+  listId: string | undefined,
+  { deleted = false }: { deleted?: boolean } = {}
+) {
   const [fields, setFields] = useState<FieldDefinition[]>([])
-  const [loading, setLoading] = useState(false)
+  // Starts true when there's a list to fetch, so callers don't flash an empty state.
+  const [loading, setLoading] = useState(Boolean(listId))
   const [error, setError] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
 
@@ -21,7 +28,9 @@ export function useListCustomFields(listId: string | undefined) {
         if (cancelled) return undefined
         setLoading(true)
         setError(null)
-        return api.get<FieldDefinition[]>(`/lists/${listId}/custom-fields`)
+        return api.get<FieldDefinition[]>(
+          `/lists/${listId}/custom-fields${deleted ? "?deleted=true" : ""}`
+        )
       })
       .then((data) => {
         if (!cancelled && data) setFields(data)
@@ -36,7 +45,7 @@ export function useListCustomFields(listId: string | undefined) {
     return () => {
       cancelled = true
     }
-  }, [listId, version])
+  }, [listId, deleted, version])
 
   const refetch = useCallback(() => setVersion((v) => v + 1), [])
 

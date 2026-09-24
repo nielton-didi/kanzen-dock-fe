@@ -22,6 +22,7 @@ import {
   CustomFieldFilters,
   type CustomFieldFilterState,
 } from "@/components/custom-fields/custom-field-filters"
+import { RowFieldsMenu } from "@/components/custom-fields/row-fields-menu"
 import { CreateWorkItemDialog } from "@/components/work-items/create-work-item-dialog"
 import { WorkItemDetailDialog } from "@/components/work-items/work-item-detail-dialog"
 import { FilterDropdown } from "@/components/work-items/filter-dropdown"
@@ -32,6 +33,7 @@ import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui
 import { Spinner } from "@/components/ui/spinner"
 import { useWorkspaceData } from "@/contexts/workspace-context"
 import { useListCustomFields } from "@/hooks/use-list-custom-fields"
+import { useListPreferences } from "@/hooks/use-list-preferences"
 import { useListStatuses } from "@/hooks/use-list-statuses"
 import { api } from "@/lib/api"
 import { customFieldFilterParams } from "@/lib/custom-fields"
@@ -53,6 +55,16 @@ export default function ListPage() {
 
   const { statuses, setStatuses } = useListStatuses(list?.id)
   const { fields } = useListCustomFields(list?.id)
+  const {
+    rowFieldIds,
+    updateRowFieldIds,
+    error: preferencesError,
+  } = useListPreferences(list?.id)
+  const rowFields = useMemo(
+    () =>
+      rowFieldIds.flatMap((id) => fields.find((field) => field.id === id) ?? []),
+    [rowFieldIds, fields]
+  )
   const workspaceMembers = useMemo(() => workspace?.members ?? [], [workspace])
 
   const [workItems, setWorkItems] = useState<WorkItem[]>([])
@@ -271,6 +283,17 @@ export default function ListPage() {
             Clear filters
           </Button>
         )}
+
+        <div className="ml-auto flex items-center gap-2">
+          {preferencesError && (
+            <span className="text-xs text-danger">{preferencesError}</span>
+          )}
+          <RowFieldsMenu
+            fields={fields}
+            value={rowFields.map((field) => field.id)}
+            onValueChange={updateRowFieldIds}
+          />
+        </div>
       </div>
 
       {workItemsError && (
@@ -317,6 +340,7 @@ export default function ListPage() {
                 status={status}
                 statuses={statuses}
                 fields={fields}
+                rowFields={rowFields}
                 workItems={workItemsByStatus.get(status.id) ?? []}
                 workspaceMembers={workspace?.members ?? []}
                 listId={listId}

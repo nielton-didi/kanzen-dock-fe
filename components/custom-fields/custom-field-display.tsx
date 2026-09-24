@@ -35,6 +35,17 @@ export const FIELD_KIND_ICONS: Record<FieldKind, LucideIcon> = {
   url: LinkIcon,
 }
 
+export const FIELD_KIND_LABELS: Record<FieldKind, string> = {
+  text: "Text",
+  number: "Number",
+  dropdown: "Dropdown",
+  multi_select: "Multi-select",
+  date: "Date",
+  person: "Person",
+  checkbox: "Checkbox",
+  url: "URL",
+}
+
 export function FieldKindIcon({ kind, className }: { kind: FieldKind; className?: string }) {
   const Icon = FIELD_KIND_ICONS[kind]
   return <Icon className={cn("size-3.5 shrink-0", className)} />
@@ -81,17 +92,26 @@ export function CustomFieldDisplay({
   value,
   members,
   placeholder = <span className="text-subtle-foreground">—</span>,
+  compact = false,
 }: {
   field: FieldDefinition
   value: CustomFieldValue | null
   members: WorkspaceMember[]
   placeholder?: React.ReactNode
+  /** One line, truncated (list rows). */
+  compact?: boolean
 }) {
   if (value === null) return <>{placeholder}</>
 
   switch (field.kind) {
     case "text":
-      return <span className="min-w-0 whitespace-pre-wrap break-words">{String(value)}</span>
+      return (
+        <span
+          className={cn("min-w-0", compact ? "truncate" : "whitespace-pre-wrap break-words")}
+        >
+          {String(value)}
+        </span>
+      )
     case "number":
       return <span className="tabular-nums">{Number(value).toLocaleString()}</span>
     case "dropdown": {
@@ -101,7 +121,12 @@ export function CustomFieldDisplay({
     case "multi_select": {
       const ids = value as string[]
       return (
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+        <span
+          className={cn(
+            "flex min-w-0 items-center gap-x-2.5 gap-y-1",
+            compact ? "overflow-hidden" : "flex-wrap"
+          )}
+        >
           {field.options
             .filter((o) => ids.includes(o.id))
             .map((option) => (

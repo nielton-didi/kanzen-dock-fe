@@ -5,7 +5,7 @@ import { cn } from "cn"
 
 import { CreateWorkItemDialog } from "@/components/work-items/create-work-item-dialog"
 import { InlineAddWorkItem } from "@/components/work-items/inline-add-work-item"
-import { WorkItemRow, WORK_ITEM_ROW_COLUMNS } from "@/components/work-items/work-item-row"
+import { WorkItemRow, workItemRowColumns } from "@/components/work-items/work-item-row"
 import { STATUS_SWATCH_CLASSNAMES } from "@/components/work-items/work-item-badges"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +19,7 @@ export function StatusGroup({
   status,
   statuses,
   fields,
+  rowFields,
   workItems,
   workspaceMembers,
   listId,
@@ -32,6 +33,8 @@ export function StatusGroup({
   status: Status
   statuses: Status[]
   fields: FieldDefinition[]
+  /** Custom fields the user shows as row columns, in column order. */
+  rowFields: FieldDefinition[]
   workItems: WorkItem[]
   workspaceMembers: WorkspaceMember[]
   listId: string
@@ -79,7 +82,7 @@ export function StatusGroup({
             <>
               <div
                 className={cn(
-                  WORK_ITEM_ROW_COLUMNS,
+                  workItemRowColumns(rowFields.length),
                   "px-2 pb-1 text-xs font-medium text-muted-foreground"
                 )}
               >
@@ -87,6 +90,11 @@ export function StatusGroup({
                 <span>Name</span>
                 <span className="justify-self-center">Status</span>
                 <span className="justify-self-center">Priority</span>
+                {rowFields.map((field) => (
+                  <span key={field.id} className="truncate">
+                    {field.name}
+                  </span>
+                ))}
                 <span className="justify-self-center">Due</span>
                 <span className="justify-self-center">Assignee</span>
                 <span />
@@ -101,6 +109,7 @@ export function StatusGroup({
                     workspaceMembers={workspaceMembers}
                     onDeleted={onWorkItemDeleted}
                     onUpdated={onWorkItemUpdated}
+                    rowFields={rowFields}
                   />
                 ))}
               </div>
