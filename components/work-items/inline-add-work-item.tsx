@@ -4,7 +4,7 @@ import { useRef, useState, type KeyboardEvent } from "react"
 import { Plus } from "lucide-react"
 import { cn } from "cn"
 
-import { WORK_ITEM_ROW_COLUMNS } from "@/components/work-items/work-item-row"
+import { workItemRowColumns } from "@/components/work-items/work-item-row"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
 import type { WorkItem } from "@/lib/types"
@@ -45,7 +45,6 @@ export function InlineAddWorkItem({
     try {
       const workItem = await api.post<WorkItem>(`/lists/${listId}/work-items`, {
         title: trimmed,
-        type: "task",
         status_id: statusId,
       })
       onCreated(workItem)
@@ -86,7 +85,7 @@ export function InlineAddWorkItem({
         type="button"
         onClick={() => setAdding(true)}
         className={cn(
-          WORK_ITEM_ROW_COLUMNS,
+          workItemRowColumns(0), // only the first two columns are used
           "w-full rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         )}
       >

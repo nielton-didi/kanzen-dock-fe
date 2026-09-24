@@ -4,14 +4,12 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation"
 import {
-  AlertTriangle,
   CircleAlert,
   CircleDot,
   Flag,
   ListTodo,
   Plus,
   Settings,
-  Tags,
   UserRound,
   X,
 } from "lucide-react"
@@ -19,11 +17,12 @@ import {
 import { PageHeader } from "@/components/layout/page-header"
 import { ProjectListSwitcher } from "@/components/layout/project-list-switcher"
 import { StatusGroup } from "@/components/work-items/status-group"
+import { WORK_ITEM_PRIORITIES } from "@/components/work-items/work-item-badges"
 import {
-  WORK_ITEM_PRIORITIES,
-  WORK_ITEM_SEVERITIES,
-  WORK_ITEM_TYPES,
-} from "@/components/work-items/work-item-badges"
+  CustomFieldFilters,
+  type CustomFieldFilterState,
+} from "@/components/custom-fields/custom-field-filters"
+import { RowFieldsMenu } from "@/components/custom-fields/row-fields-menu"
 import { CreateWorkItemDialog } from "@/components/work-items/create-work-item-dialog"
 import { WorkItemDetailDialog } from "@/components/work-items/work-item-detail-dialog"
 import { FilterDropdown } from "@/components/work-items/filter-dropdown"
@@ -33,9 +32,12 @@ import { Button } from "@/components/ui/button"
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Spinner } from "@/components/ui/spinner"
 import { useWorkspaceData } from "@/contexts/workspace-context"
+import { useListCustomFields } from "@/hooks/use-list-custom-fields"
+import { useListPreferences } from "@/hooks/use-list-preferences"
 import { useListStatuses } from "@/hooks/use-list-statuses"
 import { api } from "@/lib/api"
-import type { WorkItem, WorkItemPriority, WorkItemSeverity, WorkItemType } from "@/lib/types"
+import { customFieldFilterParams } from "@/lib/custom-fields"
+import type { WorkItem, WorkItemPriority } from "@/lib/types"
 
 export default function ListPage() {
   const { projectId, listId } = useParams<{ projectId: string; listId: string }>()
@@ -52,15 +54,26 @@ export default function ListPage() {
     : undefined
 
   const { statuses, setStatuses } = useListStatuses(list?.id)
+  const { fields } = useListCustomFields(list?.id)
+  const {
+    rowFieldIds,
+    updateRowFieldIds,
+    error: preferencesError,
+  } = useListPreferences(list?.id)
+  const rowFields = useMemo(
+    () =>
+      rowFieldIds.flatMap((id) => fields.find((field) => field.id === id) ?? []),
+    [rowFieldIds, fields]
+  )
+  const workspaceMembers = useMemo(() => workspace?.members ?? [], [workspace])
 
   const [workItems, setWorkItems] = useState<WorkItem[]>([])
   const [workItemsLoading, setWorkItemsLoading] = useState(false)
   const [workItemsError, setWorkItemsError] = useState<string | null>(null)
-  const [typeFilter, setTypeFilter] = useState<WorkItemType[]>([])
   const [statusFilter, setStatusFilter] = useState<string[]>([])
-  const [severityFilter, setSeverityFilter] = useState<WorkItemSeverity[]>([])
   const [priorityFilter, setPriorityFilter] = useState<WorkItemPriority[]>([])
   const [assigneeFilter, setAssigneeFilter] = useState<string[]>([])
+  const [customFieldFilter, setCustomFieldFilter] = useState<CustomFieldFilterState>({})
   const [collapsedStatusIds, setCollapsedStatusIds] = useState<Set<string>>(
     () => new Set()
   )
@@ -106,11 +119,10 @@ export default function ListPage() {
   }
 
   function clearFilters() {
-    setTypeFilter([])
     setStatusFilter([])
-    setSeverityFilter([])
     setPriorityFilter([])
     setAssigneeFilter([])
+    setCustomFieldFilter({})
   }
 
   useEffect(() => {
@@ -118,11 +130,10 @@ export default function ListPage() {
 
     let cancelled = false
     const params = new URLSearchParams()
-    typeFilter.forEach((v) => params.append("type", v))
     statusFilter.forEach((v) => params.append("status_id", v))
-    severityFilter.forEach((v) => params.append("severity", v))
     priorityFilter.forEach((v) => params.append("priority", v))
     assigneeFilter.forEach((v) => params.append("assigned_to", v))
+    customFieldFilterParams(customFieldFilter).forEach((v) => params.append("cf", v))
     const qs = params.toString()
 
     // setWorkItemsLoading/setWorkItemsError are deferred into the .then() below
@@ -149,7 +160,13 @@ export default function ListPage() {
     return () => {
       cancelled = true
     }
-  }, [list, typeFilter, statusFilter, severityFilter, priorityFilter, assigneeFilter])
+  }, [
+    list,
+    statusFilter,
+    priorityFilter,
+    assigneeFilter,
+    customFieldFilter,
+  ])
 
   if (loading || (listsLoading && !list)) {
     return (
@@ -180,11 +197,10 @@ export default function ListPage() {
   }
 
   const hasActiveFilters =
-    typeFilter.length > 0 ||
     statusFilter.length > 0 ||
-    severityFilter.length > 0 ||
     priorityFilter.length > 0 ||
-    assigneeFilter.length > 0
+    assigneeFilter.length > 0 ||
+    Object.keys(customFieldFilter).length > 0
 
   return (
     <div className="flex w-full flex-1 flex-col gap-4">
@@ -211,6 +227,8 @@ export default function ListPage() {
             </Button>
             <CreateWorkItemDialog
               listId={list.id}
+              fields={fields}
+              workspaceMembers={workspaceMembers}
               onCreated={(workItem) => setWorkItems((prev) => [workItem, ...prev])}
             >
               <Button variant="primary">
@@ -224,27 +242,11 @@ export default function ListPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <FilterDropdown
-          icon={<Tags className="size-3.5 shrink-0 text-muted-foreground" />}
-          label="Type"
-          value={typeFilter}
-          options={WORK_ITEM_TYPES}
-          onValueChange={(v) => setTypeFilter(v as WorkItemType[])}
-        />
-
-        <FilterDropdown
           icon={<CircleDot className="size-3.5 shrink-0 text-muted-foreground" />}
           label="Status"
           value={statusFilter}
           options={statuses.map((status) => ({ value: status.id, label: status.name }))}
           onValueChange={setStatusFilter}
-        />
-
-        <FilterDropdown
-          icon={<AlertTriangle className="size-3.5 shrink-0 text-muted-foreground" />}
-          label="Severity"
-          value={severityFilter}
-          options={WORK_ITEM_SEVERITIES}
-          onValueChange={(v) => setSeverityFilter(v as WorkItemSeverity[])}
         />
 
         <FilterDropdown
@@ -268,12 +270,30 @@ export default function ListPage() {
           />
         )}
 
+        <CustomFieldFilters
+          fields={fields}
+          members={workspaceMembers}
+          value={customFieldFilter}
+          onValueChange={setCustomFieldFilter}
+        />
+
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             <X />
             Clear filters
           </Button>
         )}
+
+        <div className="ml-auto flex items-center gap-2">
+          {preferencesError && (
+            <span className="text-xs text-danger">{preferencesError}</span>
+          )}
+          <RowFieldsMenu
+            fields={fields}
+            value={rowFields.map((field) => field.id)}
+            onValueChange={updateRowFieldIds}
+          />
+        </div>
       </div>
 
       {workItemsError && (
@@ -319,6 +339,8 @@ export default function ListPage() {
                 key={status.id}
                 status={status}
                 statuses={statuses}
+                fields={fields}
+                rowFields={rowFields}
                 workItems={workItemsByStatus.get(status.id) ?? []}
                 workspaceMembers={workspace?.members ?? []}
                 listId={listId}
@@ -356,7 +378,8 @@ export default function ListPage() {
         workItemId={selectedWorkItemId}
         workItems={orderedWorkItems}
         statuses={statuses}
-        workspaceMembers={workspace?.members ?? []}
+        fields={fields}
+        workspaceMembers={workspaceMembers}
         onOpenChange={(open) => {
           if (!open) closeWorkItemDialog()
         }}

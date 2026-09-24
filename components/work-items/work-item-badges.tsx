@@ -11,17 +11,10 @@ import { cn } from "cn"
 import { Badge } from "@/components/ui/badge"
 import type {
   WorkItemPriority,
-  WorkItemSeverity,
-  WorkItemType,
   Status,
   StatusCategory,
   StatusColor,
 } from "@/lib/types"
-
-export const WORK_ITEM_TYPES: { value: WorkItemType; label: string }[] = [
-  { value: "bug", label: "Bug" },
-  { value: "task", label: "Task" },
-]
 
 export const STATUS_CATEGORIES: { value: StatusCategory; label: string }[] = [
   { value: "not_started", label: "Not Started" },
@@ -42,13 +35,6 @@ export const STATUS_COLORS: StatusColor[] = [
   "red",
   "magenta",
   "purple",
-]
-
-export const WORK_ITEM_SEVERITIES: { value: WorkItemSeverity; label: string }[] = [
-  { value: "critical", label: "Critical" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
 ]
 
 export const WORK_ITEM_PRIORITIES: { value: WorkItemPriority; label: string }[] = [
@@ -72,12 +58,6 @@ export const STATUS_COLOR_CLASSNAMES: Record<StatusColor, string> = {
   purple: "bg-status-purple/10 text-status-purple",
 }
 
-// Type is a category, not a state, so it uses the categorical palette (§3.3).
-const TYPE_CLASSNAMES: Record<WorkItemType, string> = {
-  bug: STATUS_COLOR_CLASSNAMES.red,
-  task: STATUS_COLOR_CLASSNAMES.blue,
-}
-
 /** Solid swatch classes (no /10 tint) — used for the color-picker dots. */
 export const STATUS_SWATCH_CLASSNAMES: Record<StatusColor, string> = {
   gray: "bg-status-gray",
@@ -92,13 +72,6 @@ export const STATUS_SWATCH_CLASSNAMES: Record<StatusColor, string> = {
   purple: "bg-status-purple",
 }
 
-const SEVERITY_CLASSNAMES: Record<WorkItemSeverity, string> = {
-  critical: "bg-danger-subtle text-danger",
-  high: "bg-warning-subtle text-warning",
-  medium: "bg-muted text-muted-foreground",
-  low: "bg-muted text-subtle-foreground",
-}
-
 // Priority is shown as an icon, colored only where it signals risk (§3.4).
 const PRIORITY_ICONS: Record<WorkItemPriority, { icon: LucideIcon; className: string }> = {
   urgent: { icon: OctagonAlert, className: "text-danger" },
@@ -108,32 +81,9 @@ const PRIORITY_ICONS: Record<WorkItemPriority, { icon: LucideIcon; className: st
   none: { icon: Minus, className: "text-subtle-foreground" },
 }
 
-const TYPE_LABELS = Object.fromEntries(
-  WORK_ITEM_TYPES.map((t) => [t.value, t.label])
-) as Record<WorkItemType, string>
-const SEVERITY_LABELS = Object.fromEntries(
-  WORK_ITEM_SEVERITIES.map((s) => [s.value, s.label])
-) as Record<WorkItemSeverity, string>
 const PRIORITY_LABELS = Object.fromEntries(
   WORK_ITEM_PRIORITIES.map((p) => [p.value, p.label])
 ) as Record<WorkItemPriority, string>
-
-export function WorkItemTypeBadge({
-  type,
-  className,
-}: {
-  type: WorkItemType
-  className?: string
-}) {
-  return (
-    <Badge
-      variant="outline"
-      className={cn("border-transparent", TYPE_CLASSNAMES[type], className)}
-    >
-      {TYPE_LABELS[type]}
-    </Badge>
-  )
-}
 
 export function WorkItemStatusBadge({
   status,
@@ -152,28 +102,6 @@ export function WorkItemStatusBadge({
       )}
     >
       {status.name}
-    </Badge>
-  )
-}
-
-export function WorkItemSeverityBadge({
-  severity,
-  className,
-}: {
-  severity: WorkItemSeverity | null
-  className?: string
-}) {
-  if (severity === null) return null
-  return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "border-transparent",
-        SEVERITY_CLASSNAMES[severity],
-        className
-      )}
-    >
-      {SEVERITY_LABELS[severity]}
     </Badge>
   )
 }
