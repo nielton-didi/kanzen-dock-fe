@@ -121,6 +121,23 @@ export interface FieldDefinition {
  * multi_select → option ids. Unset is always "key absent", never null. */
 export type CustomFieldValue = string | number | boolean | string[]
 
+/** A list preset from GET /list-templates (D3), copied into a list on create. */
+export interface ListTemplate {
+  key: string
+  name: string
+  description: string
+  /** A lucide icon name (kebab-case). */
+  icon: string
+  statuses: { name: string; category: StatusCategory; color: StatusColor }[]
+  /** Template options have no ids: each list gets its own on create. */
+  fields: {
+    name: string
+    kind: FieldKind
+    options?: { label: string; color?: StatusColor }[]
+  }[]
+  defaultView: { type: "list" | "board"; groupBy: "status" }
+}
+
 export interface Attachment {
   id: string
   work_item_id: string
