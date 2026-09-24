@@ -42,7 +42,7 @@ export function WorkspaceSwitcher() {
         <SidebarMenuItem>
           <CreateWorkspaceDialog>
             <SidebarMenuButton size="lg">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg border border-dashed border-sidebar-border text-sidebar-foreground/70">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg border border-dashed border-sidebar-border text-muted-foreground">
                 <Plus className="size-4" />
               </div>
               <span className="truncate font-medium">Create workspace</span>
@@ -70,11 +70,11 @@ export function WorkspaceSwitcher() {
             </div>
             <div className="grid flex-1 text-left leading-tight">
               <span className="truncate font-medium">{activeWorkspace.name}</span>
-              <span className="truncate text-xs text-sidebar-foreground/70">
+              <span className="truncate text-xs text-muted-foreground">
                 Workspace
               </span>
             </div>
-            <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/50" />
+            <ChevronsUpDown className="ml-auto size-4 text-subtle-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--anchor-width) min-w-56"

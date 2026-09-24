@@ -49,11 +49,6 @@ export const WORK_ITEM_PRIORITIES: { value: WorkItemPriority; label: string }[] 
   { value: "low", label: "Low" },
 ]
 
-const TYPE_CLASSNAMES: Record<WorkItemType, string> = {
-  bug: "bg-red-500/10 text-red-600 dark:text-red-400",
-  task: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-}
-
 export const STATUS_COLOR_CLASSNAMES: Record<StatusColor, string> = {
   gray: "bg-status-gray/10 text-status-gray",
   blue: "bg-status-blue/10 text-status-blue",
@@ -65,6 +60,12 @@ export const STATUS_COLOR_CLASSNAMES: Record<StatusColor, string> = {
   red: "bg-status-red/10 text-status-red",
   magenta: "bg-status-magenta/10 text-status-magenta",
   purple: "bg-status-purple/10 text-status-purple",
+}
+
+// Type is a category, not a state, so it uses the categorical palette (§3.3).
+const TYPE_CLASSNAMES: Record<WorkItemType, string> = {
+  bug: STATUS_COLOR_CLASSNAMES.red,
+  task: STATUS_COLOR_CLASSNAMES.blue,
 }
 
 /** Solid swatch classes (no /10 tint) — used for the color-picker dots. */
@@ -82,16 +83,16 @@ export const STATUS_SWATCH_CLASSNAMES: Record<StatusColor, string> = {
 }
 
 const SEVERITY_CLASSNAMES: Record<WorkItemSeverity, string> = {
-  critical: "bg-red-500/10 text-red-600 dark:text-red-400",
-  high: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  low: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
+  critical: "bg-danger-subtle text-danger",
+  high: "bg-warning-subtle text-warning",
+  medium: "bg-muted text-muted-foreground",
+  low: "bg-muted text-subtle-foreground",
 }
 
 const PRIORITY_CLASSNAMES: Record<WorkItemPriority, string> = {
-  high: "bg-red-500/10 text-red-600 dark:text-red-400",
-  medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  low: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
+  high: "bg-warning-subtle text-warning",
+  medium: "bg-muted text-muted-foreground",
+  low: "bg-muted text-subtle-foreground",
 }
 
 const TYPE_LABELS = Object.fromEntries(

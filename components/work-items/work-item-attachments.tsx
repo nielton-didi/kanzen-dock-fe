@@ -120,7 +120,7 @@ export function WorkItemAttachments({
       }}
       className={cn(
         "flex items-center justify-center rounded-md border border-dashed px-4 py-3 text-center text-sm text-muted-foreground",
-        dragging && "border-foreground/40 bg-muted/40"
+        dragging && "border-information-border bg-information-subtle"
       )}
     >
       {uploading ? (

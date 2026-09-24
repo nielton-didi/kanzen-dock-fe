@@ -63,7 +63,7 @@ export function ProjectListSwitcher({
           <FolderKanban className="size-3.5 shrink-0" />
           <span className="max-w-40 truncate">{activeProject?.name}</span>
           {projects.length > 1 && (
-            <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
+            <ChevronDownIcon className="size-3.5 shrink-0 text-subtle-foreground" />
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
@@ -81,7 +81,7 @@ export function ProjectListSwitcher({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground/40" />
+      <ChevronRightIcon className="size-3.5 shrink-0 text-subtle-foreground" />
 
       {activeListId && lists.length > 0 ? (
         <DropdownMenu>
@@ -91,7 +91,7 @@ export function ProjectListSwitcher({
             <ListTodo className="size-3.5 shrink-0 text-muted-foreground" />
             <span className="max-w-40 truncate">{activeList?.name}</span>
             {lists.length > 1 && (
-              <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
+              <ChevronDownIcon className="size-3.5 shrink-0 text-subtle-foreground" />
             )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">

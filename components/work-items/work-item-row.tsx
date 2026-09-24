@@ -232,7 +232,7 @@ export function WorkItemRow({
             </AvatarFallback>
           </Avatar>
         ) : (
-          <UserRound className="size-4 text-muted-foreground/40" />
+          <UserRound className="size-4 text-subtle-foreground" />
         )}
       </WorkItemFieldMenu>
 

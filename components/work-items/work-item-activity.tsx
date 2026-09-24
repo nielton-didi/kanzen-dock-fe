@@ -113,7 +113,7 @@ export function WorkItemActivity({
         <div key={item.id} className="flex flex-col gap-1.5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2 text-muted-foreground">
-              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/50" />
+              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-subtle-foreground" />
               <span>
                 {item.kind === "history"
                   ? historyText(item.entry, currentUserId, workspaceMembers)
