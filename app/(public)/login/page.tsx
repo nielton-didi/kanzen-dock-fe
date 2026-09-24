@@ -101,7 +101,7 @@ export default function LoginPage() {
               />
             </Field>
             <Field>
-              <Button type="submit" disabled={submitting}>
+              <Button variant="primary" type="submit" disabled={submitting}>
                 {submitting && <Spinner />}
                 Log in
               </Button>

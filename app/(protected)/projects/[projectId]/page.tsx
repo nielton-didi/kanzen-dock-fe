@@ -51,7 +51,7 @@ export default function ProjectPage() {
       <div className="flex w-full flex-1 flex-col gap-4">
         <PageHeader title="Project not found" />
         <Card className="flex-1">
-          <CardContent className="flex flex-1 items-center justify-center py-16">
+          <CardContent className="flex flex-1 items-center justify-center py-10">
             <Empty className="border-0">
               <EmptyMedia variant="icon">
                 <FolderKanban />
@@ -82,18 +82,18 @@ export default function ProjectPage() {
         }
       />
       <Card className="flex-1">
-        <CardContent className="flex flex-1 items-center justify-center py-16">
+        <CardContent className="flex flex-1 items-center justify-center py-10">
           <Empty className="border-0">
             <EmptyMedia variant="icon">
               <ListTodo />
             </EmptyMedia>
             <EmptyTitle>No lists yet</EmptyTitle>
             <EmptyDescription>
-              {`Create a list to start tracking issues in "${project.name}".`}
+              {`Create a list to start tracking work in "${project.name}".`}
             </EmptyDescription>
             <EmptyContent>
               <CreateListDialog projectId={projectId}>
-                <Button>
+                <Button variant="primary">
                   <Plus />
                   Create list
                 </Button>

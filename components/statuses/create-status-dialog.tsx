@@ -94,7 +94,7 @@ export function CreateStatusDialog({
             <DialogClose render={<Button type="button" variant="outline" />}>
               Cancel
             </DialogClose>
-            <Button type="submit" disabled={submitting || !name.trim()}>
+            <Button variant="primary" type="submit" disabled={submitting || !name.trim()}>
               {submitting && <Spinner />}
               Add
             </Button>

@@ -84,7 +84,7 @@ export function NavProjects() {
         ))}
         {activeWorkspace.projects.length === 0 && (
           <SidebarMenuItem>
-            <span className="px-2 py-1.5 text-xs text-sidebar-foreground/60">
+            <span className="px-2 py-1.5 text-xs text-subtle-foreground">
               No projects yet
             </span>
           </SidebarMenuItem>
@@ -168,14 +168,14 @@ function ProjectNavItem({ project }: { project: Project }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete project?</AlertDialogTitle>
               <AlertDialogDescription>
-                &quot;{project.name}&quot; and all of its lists, issues,
+                &quot;{project.name}&quot; and all of its lists, workItems,
                 attachments, and history will be permanently deleted. This
                 can&apos;t be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={handleDelete}>
+              <AlertDialogAction variant="danger" onClick={handleDelete}>
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -198,7 +198,7 @@ function ProjectNavItem({ project }: { project: Project }) {
           )}
           {lists?.length === 0 && (
             <SidebarMenuSubItem>
-              <span className="px-2 py-1 text-xs text-sidebar-foreground/60">
+              <span className="px-2 py-1 text-xs text-subtle-foreground">
                 No lists yet
               </span>
             </SidebarMenuSubItem>

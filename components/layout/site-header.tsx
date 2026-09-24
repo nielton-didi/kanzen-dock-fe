@@ -29,7 +29,7 @@ export function SiteHeader({ user }: { user: User }) {
   const pathname = usePathname()
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/95 backdrop-blur">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b border-border bg-background/95 backdrop-blur">
       <div className="flex flex-1 items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <Breadcrumb>

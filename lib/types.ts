@@ -58,9 +58,9 @@ export interface List {
   updated_at: string
 }
 
-export type IssueType = "bug" | "task"
-export type IssueSeverity = "critical" | "high" | "medium" | "low"
-export type IssuePriority = "high" | "medium" | "low"
+export type WorkItemType = "bug" | "task"
+export type WorkItemSeverity = "critical" | "high" | "medium" | "low"
+export type WorkItemPriority = "urgent" | "high" | "medium" | "low" | "none"
 
 export type StatusCategory = "not_started" | "active" | "done" | "closed"
 export type StatusColor =
@@ -88,7 +88,7 @@ export interface Status {
 
 export interface Attachment {
   id: string
-  issue_id: string
+  work_item_id: string
   file_url: string
   file_name: string
   file_size?: number
@@ -98,9 +98,9 @@ export interface Attachment {
   uploaded_at: string
 }
 
-export interface IssueHistoryEntry {
+export interface WorkItemHistoryEntry {
   id: string
-  issue_id: string
+  work_item_id: string
   field_name: string
   old_value: string | null
   new_value: string | null
@@ -109,25 +109,35 @@ export interface IssueHistoryEntry {
   changed_at: string
 }
 
-export interface Issue {
+export interface WorkItem {
   id: string
   title: string
   description?: string
   list_id: string
-  type: IssueType
+  type: WorkItemType
   status_id: string
   status: Status
   // Only valid (non-null) when `type` is "bug".
-  severity: IssueSeverity | null
-  priority: IssuePriority
+  severity: WorkItemSeverity | null
+  priority: WorkItemPriority
+  // Calendar days. The API returns midnight-UTC ISO strings; read them with
+  // lib/dates.ts (`toDayKey`), never `new Date()`, or west-of-UTC users see
+  // the previous day.
+  start_date: string | null
+  due_date: string | null
   assigned_to?: string | null
   reported_by: string
   assignee?: User | null
   reporter: User
   attachments: Attachment[]
-  // Only present on GET /issues/:issueId
+  // Only present on GET /work-items/:workItemId
   list?: List & { project: Project & { workspace: Workspace } }
-  history?: IssueHistoryEntry[]
+  history?: WorkItemHistoryEntry[]
   created_at: string
   updated_at: string
+}
+
+/** Not in a done/closed status. Only open work is flagged as overdue. */
+export function isOpenWork(workItem: WorkItem): boolean {
+  return workItem.status.category !== "done" && workItem.status.category !== "closed"
 }

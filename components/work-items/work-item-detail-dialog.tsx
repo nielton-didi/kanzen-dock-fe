@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import {
   AlertTriangle,
+  CalendarClock,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   ChevronUp,
@@ -18,17 +20,18 @@ import {
 } from "lucide-react"
 
 import {
-  ISSUE_PRIORITIES,
-  ISSUE_SEVERITIES,
-  ISSUE_TYPES,
-  IssuePriorityBadge,
-  IssueSeverityBadge,
-  IssueTypeBadge,
-} from "@/components/issues/issue-badges"
-import { IssueActivity } from "@/components/issues/issue-activity"
-import { IssueAttachments } from "@/components/issues/issue-attachments"
-import { IssueFieldMenu } from "@/components/issues/issue-field-menu"
-import { IssueStatusMenu } from "@/components/issues/issue-status-menu"
+  WORK_ITEM_PRIORITY_OPTIONS,
+  WORK_ITEM_SEVERITIES,
+  WORK_ITEM_TYPES,
+  WorkItemPriorityLabel,
+  WorkItemSeverityBadge,
+  WorkItemTypeBadge,
+} from "@/components/work-items/work-item-badges"
+import { WorkItemActivity } from "@/components/work-items/work-item-activity"
+import { WorkItemAttachments } from "@/components/work-items/work-item-attachments"
+import { WorkItemDatePicker } from "@/components/work-items/work-item-date-picker"
+import { WorkItemFieldMenu } from "@/components/work-items/work-item-field-menu"
+import { WorkItemStatusMenu } from "@/components/work-items/work-item-status-menu"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
@@ -50,9 +53,10 @@ import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAuth } from "@/hooks/use-auth"
-import { useIssue } from "@/hooks/use-issue"
+import { useWorkItem } from "@/hooks/use-work-item"
 import { api } from "@/lib/api"
-import type { Issue, Status, WorkspaceMember } from "@/lib/types"
+import { toDayKey } from "@/lib/dates"
+import { isOpenWork, type WorkItem, type Status, type WorkspaceMember } from "@/lib/types"
 
 function initials(name?: string, email?: string) {
   return (name ?? email ?? "?").charAt(0).toUpperCase()
@@ -78,9 +82,9 @@ function PropertyRow({
   )
 }
 
-export function IssueDetailDialog({
-  issueId,
-  issues,
+export function WorkItemDetailDialog({
+  workItemId,
+  workItems,
   statuses,
   workspaceMembers,
   onOpenChange,
@@ -88,19 +92,19 @@ export function IssueDetailDialog({
   onUpdated,
   onDeleted,
 }: {
-  /** The currently open issue's id, or null when the dialog is closed. */
-  issueId: string | null
-  /** The visually-ordered list of issues on the page, used for the
+  /** The currently open work item's id, or null when the dialog is closed. */
+  workItemId: string | null
+  /** The visually-ordered list of work items on the page, used for the
    * prev/next chevrons - must be in the same order they're rendered in. */
-  issues: Issue[]
+  workItems: WorkItem[]
   statuses: Status[]
   workspaceMembers: WorkspaceMember[]
   onOpenChange: (open: boolean) => void
-  onNavigate: (issueId: string) => void
-  onUpdated: (issue: Issue) => void
-  onDeleted: (issueId: string) => void
+  onNavigate: (workItemId: string) => void
+  onUpdated: (workItem: WorkItem) => void
+  onDeleted: (workItemId: string) => void
 }) {
-  const { issue, setIssue, loading, error } = useIssue(issueId ?? undefined)
+  const { workItem, setWorkItem, loading, error } = useWorkItem(workItemId ?? undefined)
   const { user } = useAuth()
 
   const [updateError, setUpdateError] = useState<string | null>(null)
@@ -118,15 +122,15 @@ export function IssueDetailDialog({
     let cancelled = false
     Promise.resolve().then(() => {
       if (cancelled) return
-      setTitleDraft(issue?.title ?? "")
-      setDescriptionDraft(issue?.description ?? "")
+      setTitleDraft(workItem?.title ?? "")
+      setDescriptionDraft(workItem?.description ?? "")
     })
     return () => {
       cancelled = true
     }
-  }, [issue?.id, issue?.title, issue?.description])
+  }, [workItem?.id, workItem?.title, workItem?.description])
 
-  const descriptionDirty = issue !== null && descriptionDraft !== (issue.description ?? "")
+  const descriptionDirty = workItem !== null && descriptionDraft !== (workItem.description ?? "")
 
   useEffect(() => {
     return () => {
@@ -134,32 +138,32 @@ export function IssueDetailDialog({
     }
   }, [])
 
-  const open = issueId !== null
+  const open = workItemId !== null
 
-  const currentIndex = issue ? issues.findIndex((i) => i.id === issue.id) : -1
-  const previousIssue = currentIndex > 0 ? issues[currentIndex - 1] : null
-  const nextIssue =
-    currentIndex >= 0 && currentIndex < issues.length - 1
-      ? issues[currentIndex + 1]
+  const currentIndex = workItem ? workItems.findIndex((i) => i.id === workItem.id) : -1
+  const previousWorkItem = currentIndex > 0 ? workItems[currentIndex - 1] : null
+  const nextWorkItem =
+    currentIndex >= 0 && currentIndex < workItems.length - 1
+      ? workItems[currentIndex + 1]
       : null
 
-  const statusIndex = issue ? statuses.findIndex((s) => s.id === issue.status_id) : -1
+  const statusIndex = workItem ? statuses.findIndex((s) => s.id === workItem.status_id) : -1
   const nextStatus =
     statusIndex >= 0 && statusIndex < statuses.length - 1
       ? statuses[statusIndex + 1]
       : null
 
-  async function updateIssue(field: string, value: string | null) {
-    if (!issue) return
+  async function updateWorkItem(field: string, value: string | null) {
+    if (!workItem) return
     setUpdatingField(field)
     setUpdateError(null)
     try {
-      await api.put<Issue>(`/issues/${issue.id}`, { [field]: value })
+      await api.put<WorkItem>(`/work-items/${workItem.id}`, { [field]: value })
       // The PUT response doesn't include the nested `list`/`history` this
       // dialog needs, and the update also logs a new history entry - so
       // refetch the full detail response instead of merging the partial one.
-      const fresh = await api.get<Issue>(`/issues/${issue.id}`)
-      setIssue(fresh)
+      const fresh = await api.get<WorkItem>(`/work-items/${workItem.id}`)
+      setWorkItem(fresh)
       onUpdated(fresh)
     } catch (err) {
       setUpdateError((err as Error).message)
@@ -170,22 +174,22 @@ export function IssueDetailDialog({
 
   async function handleTitleSave() {
     const next = titleDraft.trim()
-    if (!issue || !next || next === issue.title) {
-      setTitleDraft(issue?.title ?? "")
+    if (!workItem || !next || next === workItem.title) {
+      setTitleDraft(workItem?.title ?? "")
       return
     }
-    await updateIssue("title", next)
+    await updateWorkItem("title", next)
   }
 
   async function handleDescriptionSave() {
-    if (!issue) return
+    if (!workItem) return
     setSavingDescription(true)
     setUpdateError(null)
     try {
       const next = descriptionDraft.trim()
-      await api.put<Issue>(`/issues/${issue.id}`, { description: next || null })
-      const fresh = await api.get<Issue>(`/issues/${issue.id}`)
-      setIssue(fresh)
+      await api.put<WorkItem>(`/work-items/${workItem.id}`, { description: next || null })
+      const fresh = await api.get<WorkItem>(`/work-items/${workItem.id}`)
+      setWorkItem(fresh)
       onUpdated(fresh)
     } catch (err) {
       setUpdateError((err as Error).message)
@@ -195,16 +199,16 @@ export function IssueDetailDialog({
   }
 
   function handleDescriptionCancel() {
-    setDescriptionDraft(issue?.description ?? "")
+    setDescriptionDraft(workItem?.description ?? "")
   }
 
   async function handleDelete() {
-    if (!issue) return
+    if (!workItem) return
     setDeleting(true)
     setUpdateError(null)
     try {
-      await api.delete(`/issues/${issue.id}`)
-      onDeleted(issue.id)
+      await api.delete(`/work-items/${workItem.id}`)
+      onDeleted(workItem.id)
       setDeleteOpen(false)
       onOpenChange(false)
     } catch (err) {
@@ -214,9 +218,9 @@ export function IssueDetailDialog({
   }
 
   function handleShare() {
-    if (!issue) return
+    if (!workItem) return
     const url = new URL(window.location.href)
-    url.searchParams.set("issue", issue.id)
+    url.searchParams.set("item", workItem.id)
     navigator.clipboard.writeText(url.toString()).then(() => {
       setCopied(true)
       if (copyTimeout.current) clearTimeout(copyTimeout.current)
@@ -238,15 +242,15 @@ export function IssueDetailDialog({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      disabled={!previousIssue}
-                      onClick={() => previousIssue && onNavigate(previousIssue.id)}
+                      disabled={!previousWorkItem}
+                      onClick={() => previousWorkItem && onNavigate(previousWorkItem.id)}
                     />
                   }
                 >
                   <ChevronUp />
-                  <span className="sr-only">Previous task</span>
+                  <span className="sr-only">Previous work item</span>
                 </TooltipTrigger>
-                <TooltipContent>Previous task</TooltipContent>
+                <TooltipContent>Previous work item</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -254,20 +258,20 @@ export function IssueDetailDialog({
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      disabled={!nextIssue}
-                      onClick={() => nextIssue && onNavigate(nextIssue.id)}
+                      disabled={!nextWorkItem}
+                      onClick={() => nextWorkItem && onNavigate(nextWorkItem.id)}
                     />
                   }
                 >
                   <ChevronDown />
-                  <span className="sr-only">Next task</span>
+                  <span className="sr-only">Next work item</span>
                 </TooltipTrigger>
-                <TooltipContent>Next task</TooltipContent>
+                <TooltipContent>Next work item</TooltipContent>
               </Tooltip>
             </div>
 
             <div className="flex items-center gap-1">
-              {issue && (
+              {workItem && (
                 <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                   <AlertDialogTrigger
                     render={
@@ -275,27 +279,27 @@ export function IssueDetailDialog({
                     }
                   >
                     <Trash2 />
-                    <span className="sr-only">Delete task</span>
+                    <span className="sr-only">Delete work item</span>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete task?</AlertDialogTitle>
+                      <AlertDialogTitle>Delete work item?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        &quot;{issue.title}&quot; and its attachments and
+                        &quot;{workItem.title}&quot; and its attachments and
                         history will be permanently deleted. This can&apos;t
                         be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                      <AlertDialogAction variant="danger" onClick={handleDelete}>
                         Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-              <Button variant="outline" size="sm" onClick={handleShare} disabled={!issue}>
+              <Button variant="outline" size="sm" onClick={handleShare} disabled={!workItem}>
                 {copied ? <Check /> : <LinkIcon />}
                 {copied ? "Copied!" : "Share"}
               </Button>
@@ -306,24 +310,24 @@ export function IssueDetailDialog({
             </div>
           </div>
 
-          {loading && !issue ? (
+          {loading && !workItem ? (
             <div className="flex flex-1 items-center justify-center">
               <Spinner className="size-6 text-muted-foreground" />
             </div>
-          ) : error || !issue ? (
+          ) : error || !workItem ? (
             <div className="flex flex-1 items-center justify-center">
               <Empty className="border-0">
                 <EmptyMedia variant="icon">
                   <History />
                 </EmptyMedia>
-                <EmptyTitle>Couldn&apos;t load this task</EmptyTitle>
+                <EmptyTitle>Couldn&apos;t load this work item</EmptyTitle>
                 <EmptyDescription>
-                  {error ?? "This task may have been deleted."}
+                  {error ?? "This work item may have been deleted."}
                 </EmptyDescription>
               </Empty>
             </div>
           ) : (
-            <div key={issue.id} className="flex min-h-0 flex-1">
+            <div key={workItem.id} className="flex min-h-0 flex-1">
               <div className="flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto p-6">
                 {updateError && (
                   <Alert variant="destructive">
@@ -333,16 +337,16 @@ export function IssueDetailDialog({
                 )}
 
                 <div className="flex flex-col gap-3">
-                  <IssueFieldMenu
-                    value={issue.type}
-                    options={ISSUE_TYPES}
+                  <WorkItemFieldMenu
+                    value={workItem.type}
+                    options={WORK_ITEM_TYPES}
                     disabled={updatingField === "type"}
                     onValueChange={(v) => {
-                      if (v !== issue.type) updateIssue("type", v)
+                      if (v !== workItem.type) updateWorkItem("type", v)
                     }}
                   >
-                    <IssueTypeBadge type={issue.type} className="w-fit" />
-                  </IssueFieldMenu>
+                    <WorkItemTypeBadge type={workItem.type} className="w-fit" />
+                  </WorkItemFieldMenu>
 
                   <input
                     type="text"
@@ -359,16 +363,16 @@ export function IssueDetailDialog({
                 <div className="flex flex-col gap-3 border-y py-4">
                   <PropertyRow icon={<CircleDot className="size-4" />} label="Status">
                     <div className="flex items-center gap-1">
-                      <IssueStatusMenu
-                        status={issue.status}
+                      <WorkItemStatusMenu
+                        status={workItem.status}
                         statuses={statuses}
                         disabled={updatingField === "status_id"}
-                        onValueChange={(v) => updateIssue("status_id", v)}
+                        onValueChange={(v) => updateWorkItem("status_id", v)}
                       >
                         <span className="rounded-md border px-2 py-1 text-xs font-medium">
-                          {issue.status.name}
+                          {workItem.status.name}
                         </span>
-                      </IssueStatusMenu>
+                      </WorkItemStatusMenu>
                       <Tooltip>
                         <TooltipTrigger
                           render={
@@ -376,7 +380,7 @@ export function IssueDetailDialog({
                               variant="ghost"
                               size="icon-sm"
                               disabled={!nextStatus || updatingField === "status_id"}
-                              onClick={() => nextStatus && updateIssue("status_id", nextStatus.id)}
+                              onClick={() => nextStatus && updateWorkItem("status_id", nextStatus.id)}
                             />
                           }
                         >
@@ -393,8 +397,8 @@ export function IssueDetailDialog({
                   </PropertyRow>
 
                   <PropertyRow icon={<UserRound className="size-4" />} label="Assignees">
-                    <IssueFieldMenu
-                      value={issue.assigned_to ?? "unassigned"}
+                    <WorkItemFieldMenu
+                      value={workItem.assigned_to ?? "unassigned"}
                       options={[
                         { value: "unassigned", label: "Unassigned" },
                         ...workspaceMembers.map((member) => ({
@@ -404,50 +408,75 @@ export function IssueDetailDialog({
                       ]}
                       disabled={updatingField === "assigned_to"}
                       onValueChange={(v) =>
-                        updateIssue("assigned_to", v === "unassigned" ? null : v)
+                        updateWorkItem("assigned_to", v === "unassigned" ? null : v)
                       }
                     >
-                      {issue.assignee ? (
+                      {workItem.assignee ? (
                         <div className="flex items-center gap-2">
                           <Avatar size="sm">
-                            <AvatarImage src={issue.assignee.avatar_url} />
+                            <AvatarImage src={workItem.assignee.avatar_url} />
                             <AvatarFallback>
-                              {initials(issue.assignee.name, issue.assignee.email)}
+                              {initials(workItem.assignee.name, workItem.assignee.email)}
                             </AvatarFallback>
                           </Avatar>
-                          <span>{issue.assignee.name ?? issue.assignee.email}</span>
+                          <span>{workItem.assignee.name ?? workItem.assignee.email}</span>
                         </div>
                       ) : (
                         <span className="text-muted-foreground">Unassigned</span>
                       )}
-                    </IssueFieldMenu>
+                    </WorkItemFieldMenu>
                   </PropertyRow>
 
                   <PropertyRow icon={<Flag className="size-4" />} label="Priority">
-                    <IssueFieldMenu
-                      value={issue.priority}
-                      options={ISSUE_PRIORITIES}
+                    <WorkItemFieldMenu
+                      value={workItem.priority}
+                      options={WORK_ITEM_PRIORITY_OPTIONS}
                       disabled={updatingField === "priority"}
                       onValueChange={(v) => {
-                        if (v !== issue.priority) updateIssue("priority", v)
+                        if (v !== workItem.priority) updateWorkItem("priority", v)
                       }}
                     >
-                      <IssuePriorityBadge priority={issue.priority} className="w-fit" />
-                    </IssueFieldMenu>
+                      <WorkItemPriorityLabel priority={workItem.priority} />
+                    </WorkItemFieldMenu>
                   </PropertyRow>
 
-                  {issue.type === "bug" && (
+                  <PropertyRow icon={<CalendarDays className="size-4" />} label="Start date">
+                    <WorkItemDatePicker
+                      label="Start date"
+                      value={workItem.start_date ? toDayKey(workItem.start_date) : null}
+                      max={workItem.due_date ? toDayKey(workItem.due_date) : null}
+                      loading={updatingField === "start_date"}
+                      onChange={(v) => updateWorkItem("start_date", v)}
+                      placeholder={<span className="text-muted-foreground">Not set</span>}
+                      className="-mx-1"
+                    />
+                  </PropertyRow>
+
+                  <PropertyRow icon={<CalendarClock className="size-4" />} label="Due date">
+                    <WorkItemDatePicker
+                      label="Due date"
+                      value={workItem.due_date ? toDayKey(workItem.due_date) : null}
+                      min={workItem.start_date ? toDayKey(workItem.start_date) : null}
+                      highlightDue={isOpenWork(workItem)}
+                      loading={updatingField === "due_date"}
+                      onChange={(v) => updateWorkItem("due_date", v)}
+                      placeholder={<span className="text-muted-foreground">Not set</span>}
+                      className="-mx-1"
+                    />
+                  </PropertyRow>
+
+                  {workItem.type === "bug" && (
                     <PropertyRow icon={<AlertTriangle className="size-4" />} label="Severity">
-                      <IssueFieldMenu
-                        value={issue.severity ?? "medium"}
-                        options={ISSUE_SEVERITIES}
+                      <WorkItemFieldMenu
+                        value={workItem.severity ?? "medium"}
+                        options={WORK_ITEM_SEVERITIES}
                         disabled={updatingField === "severity"}
                         onValueChange={(v) => {
-                          if (v !== issue.severity) updateIssue("severity", v)
+                          if (v !== workItem.severity) updateWorkItem("severity", v)
                         }}
                       >
-                        <IssueSeverityBadge severity={issue.severity} className="w-fit" />
-                      </IssueFieldMenu>
+                        <WorkItemSeverityBadge severity={workItem.severity} className="w-fit" />
+                      </WorkItemFieldMenu>
                     </PropertyRow>
                   )}
                 </div>
@@ -473,7 +502,7 @@ export function IssueDetailDialog({
                       >
                         Cancel
                       </Button>
-                      <Button
+                      <Button variant="primary"
                         size="sm"
                         onClick={handleDescriptionSave}
                         disabled={savingDescription}
@@ -487,22 +516,22 @@ export function IssueDetailDialog({
 
                 <Separator />
 
-                <IssueAttachments
-                  issueId={issue.id}
-                  initialAttachments={issue.attachments}
+                <WorkItemAttachments
+                  workItemId={workItem.id}
+                  initialAttachments={workItem.attachments}
                 />
 
                 <div className="text-xs text-muted-foreground">
-                  Created {new Date(issue.created_at).toLocaleString()} by{" "}
-                  {issue.reporter.name ?? issue.reporter.email}
+                  Created {new Date(workItem.created_at).toLocaleString()} by{" "}
+                  {workItem.reporter.name ?? workItem.reporter.email}
                 </div>
               </div>
 
               <div className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto border-l bg-background p-4">
                 <span className="text-xs font-medium text-muted-foreground">Activity</span>
-                <IssueActivity
-                  history={issue.history}
-                  attachments={issue.attachments}
+                <WorkItemActivity
+                  history={workItem.history}
+                  attachments={workItem.attachments}
                   workspaceMembers={workspaceMembers}
                   currentUserId={user?.id}
                 />

@@ -3,7 +3,7 @@ import { supabase } from "@/lib/auth"
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 /** Thrown on a non-ok response. Carries the status and full parsed body so
- * callers can branch on specifics (e.g. a 409 with { issuesCount }), not just
+ * callers can branch on specifics (e.g. a 409 with { workItemsCount }), not just
  * the message string. */
 export class ApiError extends Error {
   constructor(

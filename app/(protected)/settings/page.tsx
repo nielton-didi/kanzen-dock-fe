@@ -56,7 +56,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex w-full flex-1 flex-col gap-6">
+    <div className="flex w-full flex-1 flex-col gap-4">
       <PageHeader
         title="Settings"
         description="Manage your profile and workspace preferences."
@@ -100,7 +100,7 @@ export default function SettingsPage() {
                   </FieldDescription>
                 </Field>
                 <Field orientation="horizontal">
-                  <Button disabled>Save changes</Button>
+                  <Button variant="primary" disabled>Save changes</Button>
                   <FieldDescription>
                     Profile editing (PATCH /api/users/me) is coming in a
                     future chunk.
@@ -147,7 +147,7 @@ export default function SettingsPage() {
                 <CardTitle>Danger zone</CardTitle>
                 <CardDescription>
                   Deleting a workspace also deletes all of its projects,
-                  lists, issues, and attachments. This can&apos;t be undone.
+                  lists, workItems, and attachments. This can&apos;t be undone.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
@@ -161,7 +161,7 @@ export default function SettingsPage() {
                   <AlertDialogTrigger
                     render={
                       <Button
-                        variant="destructive"
+                        variant="danger-outline"
                         className="w-fit"
                         disabled={deleting}
                       >
@@ -181,7 +181,7 @@ export default function SettingsPage() {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
-                        variant="destructive"
+                        variant="danger"
                         onClick={handleDeleteWorkspace}
                       >
                         Delete
