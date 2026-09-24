@@ -216,7 +216,7 @@ export default function ListSettingsPage() {
             <CardHeader>
               <CardTitle>Danger zone</CardTitle>
               <CardDescription>
-                Deleting a list also deletes all of its issues, statuses, and
+                Deleting a list also deletes all of its work items, statuses, and
                 attachments. This can&apos;t be undone.
               </CardDescription>
             </CardHeader>

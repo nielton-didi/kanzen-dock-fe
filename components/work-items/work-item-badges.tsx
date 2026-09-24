@@ -2,15 +2,15 @@ import { cn } from "cn"
 
 import { Badge } from "@/components/ui/badge"
 import type {
-  IssuePriority,
-  IssueSeverity,
-  IssueType,
+  WorkItemPriority,
+  WorkItemSeverity,
+  WorkItemType,
   Status,
   StatusCategory,
   StatusColor,
 } from "@/lib/types"
 
-export const ISSUE_TYPES: { value: IssueType; label: string }[] = [
+export const WORK_ITEM_TYPES: { value: WorkItemType; label: string }[] = [
   { value: "bug", label: "Bug" },
   { value: "task", label: "Task" },
 ]
@@ -36,20 +36,20 @@ export const STATUS_COLORS: StatusColor[] = [
   "purple",
 ]
 
-export const ISSUE_SEVERITIES: { value: IssueSeverity; label: string }[] = [
+export const WORK_ITEM_SEVERITIES: { value: WorkItemSeverity; label: string }[] = [
   { value: "critical", label: "Critical" },
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
 ]
 
-export const ISSUE_PRIORITIES: { value: IssuePriority; label: string }[] = [
+export const WORK_ITEM_PRIORITIES: { value: WorkItemPriority; label: string }[] = [
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
 ]
 
-const TYPE_CLASSNAMES: Record<IssueType, string> = {
+const TYPE_CLASSNAMES: Record<WorkItemType, string> = {
   bug: "bg-red-500/10 text-red-600 dark:text-red-400",
   task: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
 }
@@ -81,34 +81,34 @@ export const STATUS_SWATCH_CLASSNAMES: Record<StatusColor, string> = {
   purple: "bg-status-purple",
 }
 
-const SEVERITY_CLASSNAMES: Record<IssueSeverity, string> = {
+const SEVERITY_CLASSNAMES: Record<WorkItemSeverity, string> = {
   critical: "bg-red-500/10 text-red-600 dark:text-red-400",
   high: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
   medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   low: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
 }
 
-const PRIORITY_CLASSNAMES: Record<IssuePriority, string> = {
+const PRIORITY_CLASSNAMES: Record<WorkItemPriority, string> = {
   high: "bg-red-500/10 text-red-600 dark:text-red-400",
   medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   low: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
 }
 
 const TYPE_LABELS = Object.fromEntries(
-  ISSUE_TYPES.map((t) => [t.value, t.label])
-) as Record<IssueType, string>
+  WORK_ITEM_TYPES.map((t) => [t.value, t.label])
+) as Record<WorkItemType, string>
 const SEVERITY_LABELS = Object.fromEntries(
-  ISSUE_SEVERITIES.map((s) => [s.value, s.label])
-) as Record<IssueSeverity, string>
+  WORK_ITEM_SEVERITIES.map((s) => [s.value, s.label])
+) as Record<WorkItemSeverity, string>
 const PRIORITY_LABELS = Object.fromEntries(
-  ISSUE_PRIORITIES.map((p) => [p.value, p.label])
-) as Record<IssuePriority, string>
+  WORK_ITEM_PRIORITIES.map((p) => [p.value, p.label])
+) as Record<WorkItemPriority, string>
 
-export function IssueTypeBadge({
+export function WorkItemTypeBadge({
   type,
   className,
 }: {
-  type: IssueType
+  type: WorkItemType
   className?: string
 }) {
   return (
@@ -121,7 +121,7 @@ export function IssueTypeBadge({
   )
 }
 
-export function IssueStatusBadge({
+export function WorkItemStatusBadge({
   status,
   className,
 }: {
@@ -142,11 +142,11 @@ export function IssueStatusBadge({
   )
 }
 
-export function IssueSeverityBadge({
+export function WorkItemSeverityBadge({
   severity,
   className,
 }: {
-  severity: IssueSeverity | null
+  severity: WorkItemSeverity | null
   className?: string
 }) {
   if (severity === null) return null
@@ -164,11 +164,11 @@ export function IssueSeverityBadge({
   )
 }
 
-export function IssuePriorityBadge({
+export function WorkItemPriorityBadge({
   priority,
   className,
 }: {
-  priority: IssuePriority
+  priority: WorkItemPriority
   className?: string
 }) {
   return (

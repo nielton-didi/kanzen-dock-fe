@@ -89,7 +89,7 @@ export default function ProjectPage() {
             </EmptyMedia>
             <EmptyTitle>No lists yet</EmptyTitle>
             <EmptyDescription>
-              {`Create a list to start tracking issues in "${project.name}".`}
+              {`Create a list to start tracking work in "${project.name}".`}
             </EmptyDescription>
             <EmptyContent>
               <CreateListDialog projectId={projectId}>

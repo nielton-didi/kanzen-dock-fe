@@ -3,42 +3,42 @@
 import { ChevronRight, Plus } from "lucide-react"
 import { cn } from "cn"
 
-import { CreateIssueDialog } from "@/components/issues/create-issue-dialog"
-import { InlineAddIssue } from "@/components/issues/inline-add-issue"
-import { IssueRow, ISSUE_ROW_COLUMNS } from "@/components/issues/issue-row"
-import { STATUS_SWATCH_CLASSNAMES } from "@/components/issues/issue-badges"
+import { CreateWorkItemDialog } from "@/components/work-items/create-work-item-dialog"
+import { InlineAddWorkItem } from "@/components/work-items/inline-add-work-item"
+import { WorkItemRow, WORK_ITEM_ROW_COLUMNS } from "@/components/work-items/work-item-row"
+import { STATUS_SWATCH_CLASSNAMES } from "@/components/work-items/work-item-badges"
 import { Button } from "@/components/ui/button"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import type { Issue, Status, WorkspaceMember } from "@/lib/types"
+import type { WorkItem, Status, WorkspaceMember } from "@/lib/types"
 
 export function StatusGroup({
   status,
   statuses,
-  issues,
+  workItems,
   workspaceMembers,
   listId,
-  onIssueOpen,
+  onWorkItemOpen,
   open,
   onOpenChange,
-  onIssueCreated,
-  onIssueDeleted,
-  onIssueUpdated,
+  onWorkItemCreated,
+  onWorkItemDeleted,
+  onWorkItemUpdated,
 }: {
   status: Status
   statuses: Status[]
-  issues: Issue[]
+  workItems: WorkItem[]
   workspaceMembers: WorkspaceMember[]
   listId: string
-  onIssueOpen: (issueId: string) => void
+  onWorkItemOpen: (workItemId: string) => void
   open: boolean
   onOpenChange: (open: boolean) => void
-  onIssueCreated: (issue: Issue) => void
-  onIssueDeleted: (issueId: string) => void
-  onIssueUpdated: (issue: Issue) => void
+  onWorkItemCreated: (workItem: WorkItem) => void
+  onWorkItemDeleted: (workItemId: string) => void
+  onWorkItemUpdated: (workItem: WorkItem) => void
 }) {
   return (
     <Collapsible open={open} onOpenChange={onOpenChange} className="group/collapsible">
@@ -56,22 +56,22 @@ export function StatusGroup({
             className={cn("size-2 shrink-0 rounded-full", STATUS_SWATCH_CLASSNAMES[status.color])}
           />
           <span className="text-sm font-medium">{status.name}</span>
-          <span className="text-xs text-muted-foreground">{issues.length}</span>
+          <span className="text-xs text-muted-foreground">{workItems.length}</span>
         </CollapsibleTrigger>
-        <CreateIssueDialog listId={listId} statusId={status.id} onCreated={onIssueCreated}>
+        <CreateWorkItemDialog listId={listId} statusId={status.id} onCreated={onWorkItemCreated}>
           <Button variant="ghost" size="icon-sm">
             <Plus />
-            <span className="sr-only">Add issue to {status.name}</span>
+            <span className="sr-only">Add work item to {status.name}</span>
           </Button>
-        </CreateIssueDialog>
+        </CreateWorkItemDialog>
       </div>
       <CollapsibleContent>
         <div className="flex flex-col py-1.5 pl-10">
-          {issues.length > 0 && (
+          {workItems.length > 0 && (
             <>
               <div
                 className={cn(
-                  ISSUE_ROW_COLUMNS,
+                  WORK_ITEM_ROW_COLUMNS,
                   "px-2 pb-1 text-xs font-medium text-muted-foreground"
                 )}
               >
@@ -85,21 +85,21 @@ export function StatusGroup({
                 <span />
               </div>
               <div className="flex flex-col divide-y divide-border/60">
-                {issues.map((issue) => (
-                  <IssueRow
-                    key={issue.id}
-                    issue={issue}
-                    onOpen={onIssueOpen}
+                {workItems.map((workItem) => (
+                  <WorkItemRow
+                    key={workItem.id}
+                    workItem={workItem}
+                    onOpen={onWorkItemOpen}
                     statuses={statuses}
                     workspaceMembers={workspaceMembers}
-                    onDeleted={onIssueDeleted}
-                    onUpdated={onIssueUpdated}
+                    onDeleted={onWorkItemDeleted}
+                    onUpdated={onWorkItemUpdated}
                   />
                 ))}
               </div>
             </>
           )}
-          <InlineAddIssue listId={listId} statusId={status.id} onCreated={onIssueCreated} />
+          <InlineAddWorkItem listId={listId} statusId={status.id} onCreated={onWorkItemCreated} />
         </div>
       </CollapsibleContent>
     </Collapsible>

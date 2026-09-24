@@ -114,7 +114,7 @@ export default function DashboardPage() {
               </EmptyMedia>
               <EmptyTitle>Recent activity will show up here</EmptyTitle>
               <EmptyDescription>
-                Issue tracking and activity feeds are coming in the next
+                Work item tracking and activity feeds are coming in the next
                 implementation chunk.
               </EmptyDescription>
             </Empty>

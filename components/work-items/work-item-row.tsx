@@ -5,17 +5,17 @@ import { CircleAlert, Trash2, UserRound } from "lucide-react"
 import { cn } from "cn"
 
 import {
-  ISSUE_PRIORITIES,
-  ISSUE_SEVERITIES,
-  ISSUE_TYPES,
-  IssuePriorityBadge,
-  IssueSeverityBadge,
-  IssueStatusBadge,
-  IssueTypeBadge,
+  WORK_ITEM_PRIORITIES,
+  WORK_ITEM_SEVERITIES,
+  WORK_ITEM_TYPES,
+  WorkItemPriorityBadge,
+  WorkItemSeverityBadge,
+  WorkItemStatusBadge,
+  WorkItemTypeBadge,
   STATUS_SWATCH_CLASSNAMES,
-} from "@/components/issues/issue-badges"
-import { IssueFieldMenu } from "@/components/issues/issue-field-menu"
-import { IssueStatusMenu } from "@/components/issues/issue-status-menu"
+} from "@/components/work-items/work-item-badges"
+import { WorkItemFieldMenu } from "@/components/work-items/work-item-field-menu"
+import { WorkItemStatusMenu } from "@/components/work-items/work-item-status-menu"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
@@ -31,31 +31,31 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
-import type { Issue, Status, WorkspaceMember } from "@/lib/types"
+import type { WorkItem, Status, WorkspaceMember } from "@/lib/types"
 
-/** Shared column widths so the header row and every issue row line up.
+/** Shared column widths so the header row and every work item row line up.
  * Name gets half the row (weighted equal to the sum of the five data
  * columns); the leading status-icon and trailing delete columns are
  * fixed icon-only widths. */
-export const ISSUE_ROW_COLUMNS =
+export const WORK_ITEM_ROW_COLUMNS =
   "grid grid-cols-[1.5rem_minmax(0,5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-3"
 
 type EditableField = "type" | "severity" | "priority" | "assigned_to"
 
-export function IssueRow({
-  issue,
+export function WorkItemRow({
+  workItem,
   onOpen,
   statuses,
   workspaceMembers,
   onDeleted,
   onUpdated,
 }: {
-  issue: Issue
-  onOpen: (issueId: string) => void
+  workItem: WorkItem
+  onOpen: (workItemId: string) => void
   statuses: Status[]
   workspaceMembers: WorkspaceMember[]
-  onDeleted: (issueId: string) => void
-  onUpdated: (issue: Issue) => void
+  onDeleted: (workItemId: string) => void
+  onUpdated: (workItem: WorkItem) => void
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -71,8 +71,8 @@ export function IssueRow({
     setDeleting(true)
     setDeleteError(null)
     try {
-      await api.delete(`/issues/${issue.id}`)
-      onDeleted(issue.id)
+      await api.delete(`/work-items/${workItem.id}`)
+      onDeleted(workItem.id)
       setDeleteOpen(false)
     } catch (err) {
       setDeleteError((err as Error).message)
@@ -82,11 +82,11 @@ export function IssueRow({
   }
 
   async function handleStatusChange(statusId: string) {
-    if (statusId === issue.status_id) return
+    if (statusId === workItem.status_id) return
     setStatusUpdating(true)
     setStatusError(null)
     try {
-      const updated = await api.put<Issue>(`/issues/${issue.id}`, {
+      const updated = await api.put<WorkItem>(`/work-items/${workItem.id}`, {
         status_id: statusId,
       })
       onUpdated(updated)
@@ -101,7 +101,7 @@ export function IssueRow({
     setUpdatingField(field)
     setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
     try {
-      const updated = await api.put<Issue>(`/issues/${issue.id}`, { [field]: value })
+      const updated = await api.put<WorkItem>(`/work-items/${workItem.id}`, { [field]: value })
       onUpdated(updated)
     } catch (err) {
       setFieldErrors((prev) => ({ ...prev, [field]: (err as Error).message }))
@@ -116,17 +116,17 @@ export function IssueRow({
     <div
       role="link"
       tabIndex={0}
-      onClick={() => onOpen(issue.id)}
+      onClick={() => onOpen(workItem.id)}
       onKeyDown={(event) => {
-        if (event.key === "Enter") onOpen(issue.id)
+        if (event.key === "Enter") onOpen(workItem.id)
       }}
       className={cn(
-        ISSUE_ROW_COLUMNS,
+        WORK_ITEM_ROW_COLUMNS,
         "cursor-pointer rounded-md px-2 py-2 text-sm outline-none hover:bg-muted/50 focus-visible:bg-muted/50"
       )}
     >
-      <IssueStatusMenu
-        status={issue.status}
+      <WorkItemStatusMenu
+        status={workItem.status}
         statuses={statuses}
         disabled={statusUpdating}
         error={statusError}
@@ -136,78 +136,78 @@ export function IssueRow({
         <span
           className={cn(
             "size-2.5 shrink-0 rounded-full ring-1 ring-inset ring-black/10",
-            statusError ? "bg-destructive" : STATUS_SWATCH_CLASSNAMES[issue.status.color]
+            statusError ? "bg-destructive" : STATUS_SWATCH_CLASSNAMES[workItem.status.color]
           )}
         />
-        <span className="sr-only">Change status (currently {issue.status.name})</span>
-      </IssueStatusMenu>
-      <span className="truncate font-medium">{issue.title}</span>
+        <span className="sr-only">Change status (currently {workItem.status.name})</span>
+      </WorkItemStatusMenu>
+      <span className="truncate font-medium">{workItem.title}</span>
 
-      <IssueFieldMenu
-        value={issue.type}
-        options={ISSUE_TYPES}
+      <WorkItemFieldMenu
+        value={workItem.type}
+        options={WORK_ITEM_TYPES}
         disabled={updatingField === "type"}
         onValueChange={(v) => {
-          if (v !== issue.type) updateField("type", v)
+          if (v !== workItem.type) updateField("type", v)
         }}
       >
-        <IssueTypeBadge
-          type={issue.type}
+        <WorkItemTypeBadge
+          type={workItem.type}
           className={cn("w-fit", fieldErrors.type && "ring-1 ring-destructive")}
         />
-      </IssueFieldMenu>
+      </WorkItemFieldMenu>
 
-      <IssueStatusMenu
-        status={issue.status}
+      <WorkItemStatusMenu
+        status={workItem.status}
         statuses={statuses}
         disabled={statusUpdating}
         error={statusError}
         onValueChange={handleStatusChange}
       >
-        <IssueStatusBadge
-          status={issue.status}
+        <WorkItemStatusBadge
+          status={workItem.status}
           className={cn("w-fit", statusError && "ring-1 ring-destructive")}
         />
-      </IssueStatusMenu>
+      </WorkItemStatusMenu>
 
-      {issue.type === "bug" ? (
-        <IssueFieldMenu
-          value={issue.severity ?? "medium"}
-          options={ISSUE_SEVERITIES}
+      {workItem.type === "bug" ? (
+        <WorkItemFieldMenu
+          value={workItem.severity ?? "medium"}
+          options={WORK_ITEM_SEVERITIES}
           disabled={updatingField === "severity"}
           onValueChange={(v) => {
-            if (v !== issue.severity) updateField("severity", v)
+            if (v !== workItem.severity) updateField("severity", v)
           }}
         >
-          {issue.severity ? (
-            <IssueSeverityBadge
-              severity={issue.severity}
+          {workItem.severity ? (
+            <WorkItemSeverityBadge
+              severity={workItem.severity}
               className={cn("w-fit", fieldErrors.severity && "ring-1 ring-destructive")}
             />
           ) : (
             <span className="text-muted-foreground">—</span>
           )}
-        </IssueFieldMenu>
+        </WorkItemFieldMenu>
       ) : (
         <span className="justify-self-center text-muted-foreground">—</span>
       )}
 
-      <IssueFieldMenu
-        value={issue.priority}
-        options={ISSUE_PRIORITIES}
+      <WorkItemFieldMenu
+        value={workItem.priority}
+        options={WORK_ITEM_PRIORITIES}
         disabled={updatingField === "priority"}
         onValueChange={(v) => {
-          if (v !== issue.priority) updateField("priority", v)
+          if (v !== workItem.priority) updateField("priority", v)
         }}
       >
-        <IssuePriorityBadge
-          priority={issue.priority}
+        <WorkItemPriorityBadge
+          priority={workItem.priority}
           className={cn("w-fit", fieldErrors.priority && "ring-1 ring-destructive")}
         />
-      </IssueFieldMenu>
+      </WorkItemFieldMenu>
 
-      <IssueFieldMenu
-        value={issue.assigned_to ?? "unassigned"}
+      <WorkItemFieldMenu
+        value={workItem.assigned_to ?? "unassigned"}
         options={[
           { value: "unassigned", label: "Unassigned" },
           ...workspaceMembers.map((member) => ({
@@ -218,23 +218,23 @@ export function IssueRow({
         disabled={updatingField === "assigned_to"}
         onValueChange={(v) => {
           const next = v === "unassigned" ? null : v
-          if (next !== (issue.assigned_to ?? null)) updateField("assigned_to", next)
+          if (next !== (workItem.assigned_to ?? null)) updateField("assigned_to", next)
         }}
       >
-        {issue.assignee ? (
+        {workItem.assignee ? (
           <Avatar
             size="sm"
             className={cn(fieldErrors.assigned_to && "ring-1 ring-destructive")}
           >
-            <AvatarImage src={issue.assignee.avatar_url} />
+            <AvatarImage src={workItem.assignee.avatar_url} />
             <AvatarFallback>
-              {(issue.assignee.name ?? issue.assignee.email).charAt(0).toUpperCase()}
+              {(workItem.assignee.name ?? workItem.assignee.email).charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         ) : (
           <UserRound className="size-4 text-muted-foreground/40" />
         )}
-      </IssueFieldMenu>
+      </WorkItemFieldMenu>
 
       <AlertDialog
         open={deleteOpen}
@@ -253,13 +253,13 @@ export function IssueRow({
           }
         >
           <Trash2 className="size-3.5 text-muted-foreground" />
-          <span className="sr-only">Delete &quot;{issue.title}&quot;</span>
+          <span className="sr-only">Delete &quot;{workItem.title}&quot;</span>
         </AlertDialogTrigger>
         <AlertDialogContent onClick={(event) => event.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete issue?</AlertDialogTitle>
+            <AlertDialogTitle>Delete work item?</AlertDialogTitle>
             <AlertDialogDescription>
-              &quot;{issue.title}&quot; and its attachments and history will
+              &quot;{workItem.title}&quot; and its attachments and history will
               be permanently deleted. This can&apos;t be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

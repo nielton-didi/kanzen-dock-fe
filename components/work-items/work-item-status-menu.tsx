@@ -2,7 +2,7 @@
 
 import { cn } from "cn"
 
-import { STATUS_CATEGORIES, STATUS_SWATCH_CLASSNAMES } from "@/components/issues/issue-badges"
+import { STATUS_CATEGORIES, STATUS_SWATCH_CLASSNAMES } from "@/components/work-items/work-item-badges"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import type { Status } from "@/lib/types"
 
-export function IssueStatusMenu({
+export function WorkItemStatusMenu({
   status,
   statuses,
   disabled,

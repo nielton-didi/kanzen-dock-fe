@@ -168,7 +168,7 @@ function ProjectNavItem({ project }: { project: Project }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete project?</AlertDialogTitle>
               <AlertDialogDescription>
-                &quot;{project.name}&quot; and all of its lists, issues,
+                &quot;{project.name}&quot; and all of its lists, workItems,
                 attachments, and history will be permanently deleted. This
                 can&apos;t be undone.
               </AlertDialogDescription>

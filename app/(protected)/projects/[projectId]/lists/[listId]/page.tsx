@@ -18,15 +18,15 @@ import {
 
 import { PageHeader } from "@/components/layout/page-header"
 import { ProjectListSwitcher } from "@/components/layout/project-list-switcher"
-import { StatusGroup } from "@/components/issues/status-group"
+import { StatusGroup } from "@/components/work-items/status-group"
 import {
-  ISSUE_PRIORITIES,
-  ISSUE_SEVERITIES,
-  ISSUE_TYPES,
-} from "@/components/issues/issue-badges"
-import { CreateIssueDialog } from "@/components/issues/create-issue-dialog"
-import { IssueDetailDialog } from "@/components/issues/issue-detail-dialog"
-import { FilterDropdown } from "@/components/issues/filter-dropdown"
+  WORK_ITEM_PRIORITIES,
+  WORK_ITEM_SEVERITIES,
+  WORK_ITEM_TYPES,
+} from "@/components/work-items/work-item-badges"
+import { CreateWorkItemDialog } from "@/components/work-items/create-work-item-dialog"
+import { WorkItemDetailDialog } from "@/components/work-items/work-item-detail-dialog"
+import { FilterDropdown } from "@/components/work-items/filter-dropdown"
 import { CreateStatusDialog } from "@/components/statuses/create-status-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -35,7 +35,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { useWorkspaceData } from "@/contexts/workspace-context"
 import { useListStatuses } from "@/hooks/use-list-statuses"
 import { api } from "@/lib/api"
-import type { Issue, IssuePriority, IssueSeverity, IssueType } from "@/lib/types"
+import type { WorkItem, WorkItemPriority, WorkItemSeverity, WorkItemType } from "@/lib/types"
 
 export default function ListPage() {
   const { projectId, listId } = useParams<{ projectId: string; listId: string }>()
@@ -43,7 +43,7 @@ export default function ListPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const selectedIssueId = searchParams.get("issue")
+  const selectedWorkItemId = searchParams.get("item")
 
   const project = workspaces.flatMap((w) => w.projects).find((p) => p.id === projectId)
   const list = listsByProject[projectId]?.find((l) => l.id === listId)
@@ -53,45 +53,45 @@ export default function ListPage() {
 
   const { statuses, setStatuses } = useListStatuses(list?.id)
 
-  const [issues, setIssues] = useState<Issue[]>([])
-  const [issuesLoading, setIssuesLoading] = useState(false)
-  const [issuesError, setIssuesError] = useState<string | null>(null)
-  const [typeFilter, setTypeFilter] = useState<IssueType[]>([])
+  const [workItems, setWorkItems] = useState<WorkItem[]>([])
+  const [workItemsLoading, setWorkItemsLoading] = useState(false)
+  const [workItemsError, setWorkItemsError] = useState<string | null>(null)
+  const [typeFilter, setTypeFilter] = useState<WorkItemType[]>([])
   const [statusFilter, setStatusFilter] = useState<string[]>([])
-  const [severityFilter, setSeverityFilter] = useState<IssueSeverity[]>([])
-  const [priorityFilter, setPriorityFilter] = useState<IssuePriority[]>([])
+  const [severityFilter, setSeverityFilter] = useState<WorkItemSeverity[]>([])
+  const [priorityFilter, setPriorityFilter] = useState<WorkItemPriority[]>([])
   const [assigneeFilter, setAssigneeFilter] = useState<string[]>([])
   const [collapsedStatusIds, setCollapsedStatusIds] = useState<Set<string>>(
     () => new Set()
   )
 
-  const issuesByStatus = useMemo(() => {
-    const map = new Map<string, Issue[]>()
-    for (const issue of issues) {
-      const bucket = map.get(issue.status_id)
-      if (bucket) bucket.push(issue)
-      else map.set(issue.status_id, [issue])
+  const workItemsByStatus = useMemo(() => {
+    const map = new Map<string, WorkItem[]>()
+    for (const workItem of workItems) {
+      const bucket = map.get(workItem.status_id)
+      if (bucket) bucket.push(workItem)
+      else map.set(workItem.status_id, [workItem])
     }
     return map
-  }, [issues])
+  }, [workItems])
 
-  // Flat, visually-ordered list of the issues currently on screen (grouped
+  // Flat, visually-ordered list of the work items currently on screen (grouped
   // by status, in the same order StatusGroup renders them), used to drive
   // the detail dialog's prev/next chevrons.
-  const orderedIssues = useMemo(
-    () => statuses.flatMap((status) => issuesByStatus.get(status.id) ?? []),
-    [statuses, issuesByStatus]
+  const orderedWorkItems = useMemo(
+    () => statuses.flatMap((status) => workItemsByStatus.get(status.id) ?? []),
+    [statuses, workItemsByStatus]
   )
 
-  function openIssue(issueId: string) {
+  function openWorkItem(workItemId: string) {
     const params = new URLSearchParams(searchParams.toString())
-    params.set("issue", issueId)
+    params.set("item", workItemId)
     router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
-  function closeIssueDialog() {
+  function closeWorkItemDialog() {
     const params = new URLSearchParams(searchParams.toString())
-    params.delete("issue")
+    params.delete("item")
     const qs = params.toString()
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }
@@ -125,25 +125,25 @@ export default function ListPage() {
     assigneeFilter.forEach((v) => params.append("assigned_to", v))
     const qs = params.toString()
 
-    // setIssuesLoading/setIssuesError are deferred into the .then() below
+    // setWorkItemsLoading/setWorkItemsError are deferred into the .then() below
     // (rather than called synchronously here) to avoid a cascading render
     // from setState-in-effect - same pattern as WorkspaceProvider's
     // lists-fetch effect.
     Promise.resolve()
       .then(() => {
         if (cancelled) return undefined
-        setIssuesLoading(true)
-        setIssuesError(null)
-        return api.get<Issue[]>(`/lists/${list.id}/issues${qs ? `?${qs}` : ""}`)
+        setWorkItemsLoading(true)
+        setWorkItemsError(null)
+        return api.get<WorkItem[]>(`/lists/${list.id}/work-items${qs ? `?${qs}` : ""}`)
       })
       .then((data) => {
-        if (!cancelled && data) setIssues(data)
+        if (!cancelled && data) setWorkItems(data)
       })
       .catch((err) => {
-        if (!cancelled) setIssuesError((err as Error).message)
+        if (!cancelled) setWorkItemsError((err as Error).message)
       })
       .finally(() => {
-        if (!cancelled) setIssuesLoading(false)
+        if (!cancelled) setWorkItemsLoading(false)
       })
 
     return () => {
@@ -211,15 +211,15 @@ export default function ListPage() {
               <Settings />
               <span className="sr-only">List settings</span>
             </Button>
-            <CreateIssueDialog
+            <CreateWorkItemDialog
               listId={list.id}
-              onCreated={(issue) => setIssues((prev) => [issue, ...prev])}
+              onCreated={(workItem) => setWorkItems((prev) => [workItem, ...prev])}
             >
               <Button>
                 <Plus />
-                New issue
+                New work item
               </Button>
-            </CreateIssueDialog>
+            </CreateWorkItemDialog>
           </div>
         }
       />
@@ -229,8 +229,8 @@ export default function ListPage() {
           icon={<Tags className="size-3.5 shrink-0 text-muted-foreground" />}
           label="Type"
           value={typeFilter}
-          options={ISSUE_TYPES}
-          onValueChange={(v) => setTypeFilter(v as IssueType[])}
+          options={WORK_ITEM_TYPES}
+          onValueChange={(v) => setTypeFilter(v as WorkItemType[])}
         />
 
         <FilterDropdown
@@ -245,16 +245,16 @@ export default function ListPage() {
           icon={<AlertTriangle className="size-3.5 shrink-0 text-muted-foreground" />}
           label="Severity"
           value={severityFilter}
-          options={ISSUE_SEVERITIES}
-          onValueChange={(v) => setSeverityFilter(v as IssueSeverity[])}
+          options={WORK_ITEM_SEVERITIES}
+          onValueChange={(v) => setSeverityFilter(v as WorkItemSeverity[])}
         />
 
         <FilterDropdown
           icon={<Flag className="size-3.5 shrink-0 text-muted-foreground" />}
           label="Priority"
           value={priorityFilter}
-          options={ISSUE_PRIORITIES}
-          onValueChange={(v) => setPriorityFilter(v as IssuePriority[])}
+          options={WORK_ITEM_PRIORITIES}
+          onValueChange={(v) => setPriorityFilter(v as WorkItemPriority[])}
         />
 
         {workspace && workspace.members.length > 0 && (
@@ -278,25 +278,25 @@ export default function ListPage() {
         )}
       </div>
 
-      {issuesError && (
+      {workItemsError && (
         <Alert variant="destructive">
           <CircleAlert />
-          <AlertDescription>{issuesError}</AlertDescription>
+          <AlertDescription>{workItemsError}</AlertDescription>
         </Alert>
       )}
 
       <div className="flex-1">
-        {issuesLoading ? (
+        {workItemsLoading ? (
           <div className="flex items-center justify-center py-16">
             <Spinner className="size-6 text-muted-foreground" />
           </div>
-        ) : hasActiveFilters && issues.length === 0 ? (
+        ) : hasActiveFilters && workItems.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <Empty className="border-0">
               <EmptyMedia variant="icon">
                 <ListTodo />
               </EmptyMedia>
-              <EmptyTitle>No matching issues</EmptyTitle>
+              <EmptyTitle>No matching work items</EmptyTitle>
               <EmptyDescription>
                 Try adjusting or clearing the filters above.
               </EmptyDescription>
@@ -308,9 +308,9 @@ export default function ListPage() {
               <EmptyMedia variant="icon">
                 <ListTodo />
               </EmptyMedia>
-              <EmptyTitle>No issues yet</EmptyTitle>
+              <EmptyTitle>No work items yet</EmptyTitle>
               <EmptyDescription>
-                {`Create the first issue for "${list.name}".`}
+                {`Create the first work item for "${list.name}".`}
               </EmptyDescription>
             </Empty>
           </div>
@@ -321,18 +321,18 @@ export default function ListPage() {
                 key={status.id}
                 status={status}
                 statuses={statuses}
-                issues={issuesByStatus.get(status.id) ?? []}
+                workItems={workItemsByStatus.get(status.id) ?? []}
                 workspaceMembers={workspace?.members ?? []}
                 listId={listId}
-                onIssueOpen={openIssue}
+                onWorkItemOpen={openWorkItem}
                 open={!collapsedStatusIds.has(status.id)}
                 onOpenChange={(open) => toggleStatusCollapsed(status.id, open)}
-                onIssueCreated={(issue) => setIssues((prev) => [issue, ...prev])}
-                onIssueDeleted={(issueId) =>
-                  setIssues((prev) => prev.filter((i) => i.id !== issueId))
+                onWorkItemCreated={(workItem) => setWorkItems((prev) => [workItem, ...prev])}
+                onWorkItemDeleted={(workItemId) =>
+                  setWorkItems((prev) => prev.filter((i) => i.id !== workItemId))
                 }
-                onIssueUpdated={(updated) =>
-                  setIssues((prev) =>
+                onWorkItemUpdated={(updated) =>
+                  setWorkItems((prev) =>
                     prev.map((i) => (i.id === updated.id ? updated : i))
                   )
                 }
@@ -354,20 +354,20 @@ export default function ListPage() {
         )}
       </div>
 
-      <IssueDetailDialog
-        issueId={selectedIssueId}
-        issues={orderedIssues}
+      <WorkItemDetailDialog
+        workItemId={selectedWorkItemId}
+        workItems={orderedWorkItems}
         statuses={statuses}
         workspaceMembers={workspace?.members ?? []}
         onOpenChange={(open) => {
-          if (!open) closeIssueDialog()
+          if (!open) closeWorkItemDialog()
         }}
-        onNavigate={openIssue}
+        onNavigate={openWorkItem}
         onUpdated={(updated) =>
-          setIssues((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
+          setWorkItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
         }
-        onDeleted={(issueId) =>
-          setIssues((prev) => prev.filter((i) => i.id !== issueId))
+        onDeleted={(workItemId) =>
+          setWorkItems((prev) => prev.filter((i) => i.id !== workItemId))
         }
       />
     </div>

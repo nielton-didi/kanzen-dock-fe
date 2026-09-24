@@ -147,7 +147,7 @@ export default function SettingsPage() {
                 <CardTitle>Danger zone</CardTitle>
                 <CardDescription>
                   Deleting a workspace also deletes all of its projects,
-                  lists, issues, and attachments. This can&apos;t be undone.
+                  lists, workItems, and attachments. This can&apos;t be undone.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">

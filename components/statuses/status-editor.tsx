@@ -50,7 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { STATUS_CATEGORIES } from "@/components/issues/issue-badges"
+import { STATUS_CATEGORIES } from "@/components/work-items/work-item-badges"
 import { StatusColorPicker } from "@/components/statuses/status-color-picker"
 import { ApiError, api } from "@/lib/api"
 import type { Status, StatusCategory, StatusColor } from "@/lib/types"
@@ -82,7 +82,7 @@ export function StatusEditor({
   const [reorderError, setReorderError] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<{
     status: Status
-    issuesCount: number
+    workItemsCount: number
   } | null>(null)
   const [reassignTo, setReassignTo] = useState<string>("")
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -191,8 +191,8 @@ export function StatusEditor({
       setReassignTo("")
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        const body = err.body as { issuesCount?: number } | null
-        setPendingDelete({ status, issuesCount: body?.issuesCount ?? 0 })
+        const body = err.body as { workItemsCount?: number } | null
+        setPendingDelete({ status, workItemsCount: body?.workItemsCount ?? 0 })
       } else {
         setDeleteError((err as Error).message)
       }
@@ -262,7 +262,7 @@ export function StatusEditor({
               Delete &quot;{pendingDelete?.status.name}&quot;?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDelete?.issuesCount} issue(s) currently use this status.
+              {pendingDelete?.workItemsCount} workItem(s) currently use this status.
               Choose another status to move them to before deleting.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -276,7 +276,7 @@ export function StatusEditor({
 
           <Select value={reassignTo} onValueChange={(v) => setReassignTo(v ?? "")}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Move issues to..." />
+              <SelectValue placeholder="Move work items to..." />
             </SelectTrigger>
             <SelectContent>
               {statuses
@@ -298,7 +298,7 @@ export function StatusEditor({
                 pendingDelete && attemptDelete(pendingDelete.status, reassignTo)
               }
             >
-              Move issues & delete
+              Move work items & delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
