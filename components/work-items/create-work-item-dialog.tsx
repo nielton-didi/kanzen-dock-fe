@@ -35,14 +35,10 @@ import type {
   FieldDefinition,
   WorkItem,
   WorkItemPriority,
-  WorkItemSeverity,
-  WorkItemType,
   WorkspaceMember,
 } from "@/lib/types"
 import {
   WORK_ITEM_PRIORITIES,
-  WORK_ITEM_SEVERITIES,
-  WORK_ITEM_TYPES,
   WorkItemPriorityLabel,
 } from "@/components/work-items/work-item-badges"
 import { WorkItemDatePicker } from "@/components/work-items/work-item-date-picker"
@@ -73,8 +69,6 @@ export function CreateWorkItemDialog({
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [type, setType] = useState<WorkItemType>("bug")
-  const [severity, setSeverity] = useState<WorkItemSeverity>("medium")
   const [priority, setPriority] = useState<WorkItemPriority>("none")
   const [startDate, setStartDate] = useState<DayKey | null>(null)
   const [dueDate, setDueDate] = useState<DayKey | null>(null)
@@ -85,8 +79,6 @@ export function CreateWorkItemDialog({
   function reset() {
     setTitle("")
     setDescription("")
-    setType("bug")
-    setSeverity("medium")
     setPriority("none")
     setStartDate(null)
     setDueDate(null)
@@ -121,8 +113,6 @@ export function CreateWorkItemDialog({
       const workItem = await api.post<WorkItem>(`/lists/${listId}/work-items`, {
         title: title.trim(),
         description: description.trim() || undefined,
-        type,
-        ...(type === "bug" ? { severity } : {}),
         priority,
         ...(startDate ? { start_date: startDate } : {}),
         ...(dueDate ? { due_date: dueDate } : {}),
@@ -186,26 +176,6 @@ export function CreateWorkItemDialog({
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="work-item-type">Type</FieldLabel>
-                <Select
-                  value={type}
-                  onValueChange={(v) => setType(v as WorkItemType)}
-                >
-                  <SelectTrigger id="work-item-type" className="w-full">
-                    <SelectValue>
-                      {(value: WorkItemType) => WORK_ITEM_TYPES.find((t) => t.value === value)?.label}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORK_ITEM_TYPES.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
                 <FieldLabel htmlFor="work-item-priority">Priority</FieldLabel>
                 <Select
                   value={priority}
@@ -225,30 +195,6 @@ export function CreateWorkItemDialog({
                   </SelectContent>
                 </Select>
               </Field>
-              {type === "bug" && (
-                <Field>
-                  <FieldLabel htmlFor="work-item-severity">Severity</FieldLabel>
-                  <Select
-                    value={severity}
-                    onValueChange={(v) => setSeverity(v as WorkItemSeverity)}
-                  >
-                    <SelectTrigger id="work-item-severity" className="w-full">
-                      <SelectValue>
-                        {(value: WorkItemSeverity) =>
-                          WORK_ITEM_SEVERITIES.find((s) => s.value === value)?.label
-                        }
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WORK_ITEM_SEVERITIES.map(({ value, label }) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <Field>

@@ -6,12 +6,8 @@ import { cn } from "cn"
 
 import {
   WORK_ITEM_PRIORITY_OPTIONS,
-  WORK_ITEM_SEVERITIES,
-  WORK_ITEM_TYPES,
   WorkItemPriorityLabel,
-  WorkItemSeverityBadge,
   WorkItemStatusBadge,
-  WorkItemTypeBadge,
   STATUS_SWATCH_CLASSNAMES,
 } from "@/components/work-items/work-item-badges"
 import { WorkItemDatePicker } from "@/components/work-items/work-item-date-picker"
@@ -36,13 +32,13 @@ import { toDayKey } from "@/lib/dates"
 import { isOpenWork, type WorkItem, type Status, type WorkspaceMember } from "@/lib/types"
 
 /** Shared column widths so the header row and every work item row line up.
- * Name gets half the row (weighted equal to the sum of the six data
+ * Name gets half the row (weighted equal to the sum of the four data
  * columns); the leading status-icon and trailing delete columns are
- * fixed icon-only widths. */
+ * fixed icon-only widths. Custom fields join the row in P0-8. */
 export const WORK_ITEM_ROW_COLUMNS =
-  "grid grid-cols-[1.5rem_minmax(0,6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-3"
+  "grid grid-cols-[1.5rem_minmax(0,4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-3"
 
-type EditableField = "type" | "severity" | "priority" | "due_date" | "assigned_to"
+type EditableField = "priority" | "due_date" | "assigned_to"
 
 export function WorkItemRow({
   workItem,
@@ -145,20 +141,6 @@ export function WorkItemRow({
       </WorkItemStatusMenu>
       <span className="truncate font-medium">{workItem.title}</span>
 
-      <WorkItemFieldMenu
-        value={workItem.type}
-        options={WORK_ITEM_TYPES}
-        disabled={updatingField === "type"}
-        onValueChange={(v) => {
-          if (v !== workItem.type) updateField("type", v)
-        }}
-      >
-        <WorkItemTypeBadge
-          type={workItem.type}
-          className={cn("w-fit", fieldErrors.type && "ring-1 ring-destructive")}
-        />
-      </WorkItemFieldMenu>
-
       <WorkItemStatusMenu
         status={workItem.status}
         statuses={statuses}
@@ -171,28 +153,6 @@ export function WorkItemRow({
           className={cn("w-fit", statusError && "ring-1 ring-destructive")}
         />
       </WorkItemStatusMenu>
-
-      {workItem.type === "bug" ? (
-        <WorkItemFieldMenu
-          value={workItem.severity ?? "medium"}
-          options={WORK_ITEM_SEVERITIES}
-          disabled={updatingField === "severity"}
-          onValueChange={(v) => {
-            if (v !== workItem.severity) updateField("severity", v)
-          }}
-        >
-          {workItem.severity ? (
-            <WorkItemSeverityBadge
-              severity={workItem.severity}
-              className={cn("w-fit", fieldErrors.severity && "ring-1 ring-destructive")}
-            />
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          )}
-        </WorkItemFieldMenu>
-      ) : (
-        <span className="justify-self-center text-muted-foreground">—</span>
-      )}
 
       <WorkItemFieldMenu
         value={workItem.priority}

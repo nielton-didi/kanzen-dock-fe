@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 import {
-  AlertTriangle,
   CalendarClock,
   CalendarDays,
   ChevronDown,
@@ -21,11 +20,7 @@ import {
 
 import {
   WORK_ITEM_PRIORITY_OPTIONS,
-  WORK_ITEM_SEVERITIES,
-  WORK_ITEM_TYPES,
   WorkItemPriorityLabel,
-  WorkItemSeverityBadge,
-  WorkItemTypeBadge,
 } from "@/components/work-items/work-item-badges"
 import { CustomFieldInput } from "@/components/custom-fields/custom-field-input"
 import { FieldKindIcon } from "@/components/custom-fields/custom-field-display"
@@ -361,29 +356,16 @@ export function WorkItemDetailDialog({
                   </Alert>
                 )}
 
-                <div className="flex flex-col gap-3">
-                  <WorkItemFieldMenu
-                    value={workItem.type}
-                    options={WORK_ITEM_TYPES}
-                    disabled={updatingField === "type"}
-                    onValueChange={(v) => {
-                      if (v !== workItem.type) updateWorkItem("type", v)
-                    }}
-                  >
-                    <WorkItemTypeBadge type={workItem.type} className="w-fit" />
-                  </WorkItemFieldMenu>
-
-                  <input
-                    type="text"
-                    value={titleDraft}
-                    onChange={(e) => setTitleDraft(e.target.value)}
-                    onBlur={handleTitleSave}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") e.currentTarget.blur()
-                    }}
-                    className="-mx-1 rounded-md border-b border-transparent bg-transparent px-1 text-2xl font-semibold tracking-tight outline-none hover:bg-muted/40 focus-visible:border-b-border focus-visible:bg-muted/40"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur()
+                  }}
+                  className="-mx-1 rounded-md border-b border-transparent bg-transparent px-1 text-2xl font-semibold tracking-tight outline-none hover:bg-muted/40 focus-visible:border-b-border focus-visible:bg-muted/40"
+                />
 
                 <div className="flex flex-col gap-3 border-y py-4">
                   <PropertyRow icon={<CircleDot className="size-4" />} label="Status">
@@ -489,21 +471,6 @@ export function WorkItemDetailDialog({
                       className="-mx-1"
                     />
                   </PropertyRow>
-
-                  {workItem.type === "bug" && (
-                    <PropertyRow icon={<AlertTriangle className="size-4" />} label="Severity">
-                      <WorkItemFieldMenu
-                        value={workItem.severity ?? "medium"}
-                        options={WORK_ITEM_SEVERITIES}
-                        disabled={updatingField === "severity"}
-                        onValueChange={(v) => {
-                          if (v !== workItem.severity) updateWorkItem("severity", v)
-                        }}
-                      >
-                        <WorkItemSeverityBadge severity={workItem.severity} className="w-fit" />
-                      </WorkItemFieldMenu>
-                    </PropertyRow>
-                  )}
 
                   {fields.map((field) => (
                     <PropertyRow

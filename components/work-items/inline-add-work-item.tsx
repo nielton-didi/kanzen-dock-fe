@@ -45,7 +45,6 @@ export function InlineAddWorkItem({
     try {
       const workItem = await api.post<WorkItem>(`/lists/${listId}/work-items`, {
         title: trimmed,
-        type: "task",
         status_id: statusId,
       })
       onCreated(workItem)

@@ -58,8 +58,6 @@ export interface List {
   updated_at: string
 }
 
-export type WorkItemType = "bug" | "task"
-export type WorkItemSeverity = "critical" | "high" | "medium" | "low"
 export type WorkItemPriority = "urgent" | "high" | "medium" | "low" | "none"
 
 export type StatusCategory = "not_started" | "active" | "done" | "closed"
@@ -112,6 +110,8 @@ export interface FieldDefinition {
   /** Only dropdown / multi_select have options; `[]` for every other kind. */
   options: FieldOption[]
   position: number
+  /** Set when the field is soft-deleted (only listed with `?deleted=true`). */
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }
@@ -149,11 +149,8 @@ export interface WorkItem {
   title: string
   description?: string
   list_id: string
-  type: WorkItemType
   status_id: string
   status: Status
-  // Only valid (non-null) when `type` is "bug".
-  severity: WorkItemSeverity | null
   priority: WorkItemPriority
   // Calendar days. The API returns midnight-UTC ISO strings; read them with
   // lib/dates.ts (`toDayKey`), never `new Date()`, or west-of-UTC users see

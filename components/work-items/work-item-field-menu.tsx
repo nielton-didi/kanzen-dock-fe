@@ -11,7 +11,7 @@ import { Spinner } from "@/components/ui/spinner"
 
 /** Wraps a badge/avatar trigger with a checklist dropdown of value options,
  * for the "click a cell, pick a new value" editing pattern used across the
- * work item row's Type/Status/Severity/Priority/Assignee columns. */
+ * work item row's Status/Priority/Assignee columns. */
 export function WorkItemFieldMenu({
   value,
   options,

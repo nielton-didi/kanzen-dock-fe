@@ -4,14 +4,12 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useParams, useRouter, useSearchParams } from "next/navigation"
 import {
-  AlertTriangle,
   CircleAlert,
   CircleDot,
   Flag,
   ListTodo,
   Plus,
   Settings,
-  Tags,
   UserRound,
   X,
 } from "lucide-react"
@@ -19,11 +17,7 @@ import {
 import { PageHeader } from "@/components/layout/page-header"
 import { ProjectListSwitcher } from "@/components/layout/project-list-switcher"
 import { StatusGroup } from "@/components/work-items/status-group"
-import {
-  WORK_ITEM_PRIORITIES,
-  WORK_ITEM_SEVERITIES,
-  WORK_ITEM_TYPES,
-} from "@/components/work-items/work-item-badges"
+import { WORK_ITEM_PRIORITIES } from "@/components/work-items/work-item-badges"
 import {
   CustomFieldFilters,
   type CustomFieldFilterState,
@@ -41,7 +35,7 @@ import { useListCustomFields } from "@/hooks/use-list-custom-fields"
 import { useListStatuses } from "@/hooks/use-list-statuses"
 import { api } from "@/lib/api"
 import { customFieldFilterParams } from "@/lib/custom-fields"
-import type { WorkItem, WorkItemPriority, WorkItemSeverity, WorkItemType } from "@/lib/types"
+import type { WorkItem, WorkItemPriority } from "@/lib/types"
 
 export default function ListPage() {
   const { projectId, listId } = useParams<{ projectId: string; listId: string }>()
@@ -64,9 +58,7 @@ export default function ListPage() {
   const [workItems, setWorkItems] = useState<WorkItem[]>([])
   const [workItemsLoading, setWorkItemsLoading] = useState(false)
   const [workItemsError, setWorkItemsError] = useState<string | null>(null)
-  const [typeFilter, setTypeFilter] = useState<WorkItemType[]>([])
   const [statusFilter, setStatusFilter] = useState<string[]>([])
-  const [severityFilter, setSeverityFilter] = useState<WorkItemSeverity[]>([])
   const [priorityFilter, setPriorityFilter] = useState<WorkItemPriority[]>([])
   const [assigneeFilter, setAssigneeFilter] = useState<string[]>([])
   const [customFieldFilter, setCustomFieldFilter] = useState<CustomFieldFilterState>({})
@@ -115,9 +107,7 @@ export default function ListPage() {
   }
 
   function clearFilters() {
-    setTypeFilter([])
     setStatusFilter([])
-    setSeverityFilter([])
     setPriorityFilter([])
     setAssigneeFilter([])
     setCustomFieldFilter({})
@@ -128,9 +118,7 @@ export default function ListPage() {
 
     let cancelled = false
     const params = new URLSearchParams()
-    typeFilter.forEach((v) => params.append("type", v))
     statusFilter.forEach((v) => params.append("status_id", v))
-    severityFilter.forEach((v) => params.append("severity", v))
     priorityFilter.forEach((v) => params.append("priority", v))
     assigneeFilter.forEach((v) => params.append("assigned_to", v))
     customFieldFilterParams(customFieldFilter).forEach((v) => params.append("cf", v))
@@ -162,9 +150,7 @@ export default function ListPage() {
     }
   }, [
     list,
-    typeFilter,
     statusFilter,
-    severityFilter,
     priorityFilter,
     assigneeFilter,
     customFieldFilter,
@@ -199,9 +185,7 @@ export default function ListPage() {
   }
 
   const hasActiveFilters =
-    typeFilter.length > 0 ||
     statusFilter.length > 0 ||
-    severityFilter.length > 0 ||
     priorityFilter.length > 0 ||
     assigneeFilter.length > 0 ||
     Object.keys(customFieldFilter).length > 0
@@ -246,27 +230,11 @@ export default function ListPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <FilterDropdown
-          icon={<Tags className="size-3.5 shrink-0 text-muted-foreground" />}
-          label="Type"
-          value={typeFilter}
-          options={WORK_ITEM_TYPES}
-          onValueChange={(v) => setTypeFilter(v as WorkItemType[])}
-        />
-
-        <FilterDropdown
           icon={<CircleDot className="size-3.5 shrink-0 text-muted-foreground" />}
           label="Status"
           value={statusFilter}
           options={statuses.map((status) => ({ value: status.id, label: status.name }))}
           onValueChange={setStatusFilter}
-        />
-
-        <FilterDropdown
-          icon={<AlertTriangle className="size-3.5 shrink-0 text-muted-foreground" />}
-          label="Severity"
-          value={severityFilter}
-          options={WORK_ITEM_SEVERITIES}
-          onValueChange={(v) => setSeverityFilter(v as WorkItemSeverity[])}
         />
 
         <FilterDropdown

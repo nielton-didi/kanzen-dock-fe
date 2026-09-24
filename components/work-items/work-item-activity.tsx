@@ -1,10 +1,6 @@
 import { FileIcon } from "lucide-react"
 
-import {
-  WORK_ITEM_PRIORITIES,
-  WORK_ITEM_SEVERITIES,
-  WORK_ITEM_TYPES,
-} from "@/components/work-items/work-item-badges"
+import { WORK_ITEM_PRIORITIES } from "@/components/work-items/work-item-badges"
 import { customFieldHistoryId, formatHistoryValue } from "@/lib/custom-fields"
 import { formatDay } from "@/lib/dates"
 import type {
@@ -51,13 +47,7 @@ function resolveUserLabel(
 
 function formatValue(field: string, value: string | null) {
   if (value === null) return "none"
-  if (field === "type") {
-    return WORK_ITEM_TYPES.find((t) => t.value === value)?.label ?? value
-  }
   // status history is stored as a plain-text status name already, not a value to look up.
-  if (field === "severity") {
-    return WORK_ITEM_SEVERITIES.find((s) => s.value === value)?.label ?? value
-  }
   if (field === "priority") {
     return WORK_ITEM_PRIORITIES.find((p) => p.value === value)?.label ?? value
   }

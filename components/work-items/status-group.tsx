@@ -85,9 +85,7 @@ export function StatusGroup({
               >
                 <span />
                 <span>Name</span>
-                <span className="justify-self-center">Type</span>
                 <span className="justify-self-center">Status</span>
-                <span className="justify-self-center">Severity</span>
                 <span className="justify-self-center">Priority</span>
                 <span className="justify-self-center">Due</span>
                 <span className="justify-self-center">Assignee</span>
