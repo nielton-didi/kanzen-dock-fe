@@ -40,11 +40,11 @@ function formatFileSize(bytes?: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function IssueAttachments({
-  issueId,
+export function WorkItemAttachments({
+  workItemId,
   initialAttachments,
 }: {
-  issueId: string
+  workItemId: string
   initialAttachments: AttachmentType[]
 }) {
   const [attachments, setAttachments] = useState(initialAttachments)
@@ -71,7 +71,7 @@ export function IssueAttachments({
     setUploading(true)
     try {
       const attachment = await api.upload<AttachmentType>(
-        `/issues/${issueId}/attachments`,
+        `/work-items/${workItemId}/attachments`,
         formData
       )
       setAttachments((prev) => [attachment, ...prev])
@@ -120,7 +120,7 @@ export function IssueAttachments({
       }}
       className={cn(
         "flex items-center justify-center rounded-md border border-dashed px-4 py-3 text-center text-sm text-muted-foreground",
-        dragging && "border-foreground/40 bg-muted/40"
+        dragging && "border-information-border bg-information-subtle"
       )}
     >
       {uploading ? (
@@ -221,7 +221,7 @@ export function IssueAttachments({
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      variant="destructive"
+                      variant="danger"
                       onClick={() => handleDelete(attachment.id)}
                     >
                       Delete

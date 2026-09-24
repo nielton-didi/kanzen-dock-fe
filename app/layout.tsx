@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Kanzen Dock",
-  description: "Bug and issue tracking for internal teams.",
+  description: "Work management for teams.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

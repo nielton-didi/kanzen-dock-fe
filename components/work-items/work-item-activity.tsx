@@ -1,11 +1,12 @@
 import { FileIcon } from "lucide-react"
 
 import {
-  ISSUE_PRIORITIES,
-  ISSUE_SEVERITIES,
-  ISSUE_TYPES,
-} from "@/components/issues/issue-badges"
-import type { Attachment, IssueHistoryEntry, User, WorkspaceMember } from "@/lib/types"
+  WORK_ITEM_PRIORITIES,
+  WORK_ITEM_SEVERITIES,
+  WORK_ITEM_TYPES,
+} from "@/components/work-items/work-item-badges"
+import { formatDay } from "@/lib/dates"
+import type { Attachment, WorkItemHistoryEntry, User, WorkspaceMember } from "@/lib/types"
 
 function formatFieldName(field: string) {
   return field.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
@@ -44,27 +45,29 @@ function resolveUserLabel(
 function formatValue(field: string, value: string | null) {
   if (value === null) return "none"
   if (field === "type") {
-    return ISSUE_TYPES.find((t) => t.value === value)?.label ?? value
+    return WORK_ITEM_TYPES.find((t) => t.value === value)?.label ?? value
   }
   // status history is stored as a plain-text status name already, not a value to look up.
   if (field === "severity") {
-    return ISSUE_SEVERITIES.find((s) => s.value === value)?.label ?? value
+    return WORK_ITEM_SEVERITIES.find((s) => s.value === value)?.label ?? value
   }
   if (field === "priority") {
-    return ISSUE_PRIORITIES.find((p) => p.value === value)?.label ?? value
+    return WORK_ITEM_PRIORITIES.find((p) => p.value === value)?.label ?? value
   }
+  // Stored as YYYY-MM-DD calendar days.
+  if (field === "start_date" || field === "due_date") return formatDay(value)
   return value
 }
 
 function historyText(
-  entry: IssueHistoryEntry,
+  entry: WorkItemHistoryEntry,
   currentUserId: string | undefined,
   workspaceMembers: WorkspaceMember[]
 ) {
   const actor = actorLabel(entry.changer, currentUserId)
-  if (entry.field_name === "created") return `${actor} created this task`
+  if (entry.field_name === "created") return `${actor} created this work item`
   if (entry.field_name === "assigned_to") {
-    if (!entry.new_value) return `${actor} unassigned this task`
+    if (!entry.new_value) return `${actor} unassigned this work item`
     return `${actor} assigned this to ${resolveUserLabel(entry.new_value, currentUserId, workspaceMembers)}`
   }
   return `${actor} changed ${formatFieldName(entry.field_name)} from ${formatValue(
@@ -74,16 +77,16 @@ function historyText(
 }
 
 type ActivityItem =
-  | { id: string; timestamp: string; kind: "history"; entry: IssueHistoryEntry }
+  | { id: string; timestamp: string; kind: "history"; entry: WorkItemHistoryEntry }
   | { id: string; timestamp: string; kind: "attachment"; attachment: Attachment }
 
-export function IssueActivity({
+export function WorkItemActivity({
   history,
   attachments,
   workspaceMembers,
   currentUserId,
 }: {
-  history?: IssueHistoryEntry[]
+  history?: WorkItemHistoryEntry[]
   attachments: Attachment[]
   workspaceMembers: WorkspaceMember[]
   currentUserId?: string
@@ -113,7 +116,7 @@ export function IssueActivity({
         <div key={item.id} className="flex flex-col gap-1.5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2 text-muted-foreground">
-              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/50" />
+              <span className="mt-1.5 size-1 shrink-0 rounded-full bg-subtle-foreground" />
               <span>
                 {item.kind === "history"
                   ? historyText(item.entry, currentUserId, workspaceMembers)

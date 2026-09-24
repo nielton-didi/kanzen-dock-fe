@@ -64,7 +64,7 @@ export function CreateListDialog({
         <DialogHeader>
           <DialogTitle>Create list</DialogTitle>
           <DialogDescription>
-            Lists group issues together, like Bugs or Backlog. A list can
+            Lists group work items together, like Bugs or Backlog. A list can
             hold a mix of bugs and tasks.
           </DialogDescription>
         </DialogHeader>
@@ -92,7 +92,7 @@ export function CreateListDialog({
             <DialogClose render={<Button type="button" variant="outline" />}>
               Cancel
             </DialogClose>
-            <Button type="submit" disabled={submitting || !name.trim()}>
+            <Button variant="primary" type="submit" disabled={submitting || !name.trim()}>
               {submitting && <Spinner />}
               Create
             </Button>

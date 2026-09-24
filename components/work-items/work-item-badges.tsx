@@ -1,16 +1,24 @@
+import {
+  Minus,
+  OctagonAlert,
+  SignalHigh,
+  SignalLow,
+  SignalMedium,
+  type LucideIcon,
+} from "lucide-react"
 import { cn } from "cn"
 
 import { Badge } from "@/components/ui/badge"
 import type {
-  IssuePriority,
-  IssueSeverity,
-  IssueType,
+  WorkItemPriority,
+  WorkItemSeverity,
+  WorkItemType,
   Status,
   StatusCategory,
   StatusColor,
 } from "@/lib/types"
 
-export const ISSUE_TYPES: { value: IssueType; label: string }[] = [
+export const WORK_ITEM_TYPES: { value: WorkItemType; label: string }[] = [
   { value: "bug", label: "Bug" },
   { value: "task", label: "Task" },
 ]
@@ -36,23 +44,20 @@ export const STATUS_COLORS: StatusColor[] = [
   "purple",
 ]
 
-export const ISSUE_SEVERITIES: { value: IssueSeverity; label: string }[] = [
+export const WORK_ITEM_SEVERITIES: { value: WorkItemSeverity; label: string }[] = [
   { value: "critical", label: "Critical" },
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
 ]
 
-export const ISSUE_PRIORITIES: { value: IssuePriority; label: string }[] = [
+export const WORK_ITEM_PRIORITIES: { value: WorkItemPriority; label: string }[] = [
+  { value: "urgent", label: "Urgent" },
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
+  { value: "none", label: "No priority" },
 ]
-
-const TYPE_CLASSNAMES: Record<IssueType, string> = {
-  bug: "bg-red-500/10 text-red-600 dark:text-red-400",
-  task: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-}
 
 export const STATUS_COLOR_CLASSNAMES: Record<StatusColor, string> = {
   gray: "bg-status-gray/10 text-status-gray",
@@ -65,6 +70,12 @@ export const STATUS_COLOR_CLASSNAMES: Record<StatusColor, string> = {
   red: "bg-status-red/10 text-status-red",
   magenta: "bg-status-magenta/10 text-status-magenta",
   purple: "bg-status-purple/10 text-status-purple",
+}
+
+// Type is a category, not a state, so it uses the categorical palette (§3.3).
+const TYPE_CLASSNAMES: Record<WorkItemType, string> = {
+  bug: STATUS_COLOR_CLASSNAMES.red,
+  task: STATUS_COLOR_CLASSNAMES.blue,
 }
 
 /** Solid swatch classes (no /10 tint) — used for the color-picker dots. */
@@ -81,34 +92,37 @@ export const STATUS_SWATCH_CLASSNAMES: Record<StatusColor, string> = {
   purple: "bg-status-purple",
 }
 
-const SEVERITY_CLASSNAMES: Record<IssueSeverity, string> = {
-  critical: "bg-red-500/10 text-red-600 dark:text-red-400",
-  high: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  low: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
+const SEVERITY_CLASSNAMES: Record<WorkItemSeverity, string> = {
+  critical: "bg-danger-subtle text-danger",
+  high: "bg-warning-subtle text-warning",
+  medium: "bg-muted text-muted-foreground",
+  low: "bg-muted text-subtle-foreground",
 }
 
-const PRIORITY_CLASSNAMES: Record<IssuePriority, string> = {
-  high: "bg-red-500/10 text-red-600 dark:text-red-400",
-  medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  low: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
+// Priority is shown as an icon, colored only where it signals risk (§3.4).
+const PRIORITY_ICONS: Record<WorkItemPriority, { icon: LucideIcon; className: string }> = {
+  urgent: { icon: OctagonAlert, className: "text-danger" },
+  high: { icon: SignalHigh, className: "text-warning" },
+  medium: { icon: SignalMedium, className: "text-muted-foreground" },
+  low: { icon: SignalLow, className: "text-muted-foreground" },
+  none: { icon: Minus, className: "text-subtle-foreground" },
 }
 
 const TYPE_LABELS = Object.fromEntries(
-  ISSUE_TYPES.map((t) => [t.value, t.label])
-) as Record<IssueType, string>
+  WORK_ITEM_TYPES.map((t) => [t.value, t.label])
+) as Record<WorkItemType, string>
 const SEVERITY_LABELS = Object.fromEntries(
-  ISSUE_SEVERITIES.map((s) => [s.value, s.label])
-) as Record<IssueSeverity, string>
+  WORK_ITEM_SEVERITIES.map((s) => [s.value, s.label])
+) as Record<WorkItemSeverity, string>
 const PRIORITY_LABELS = Object.fromEntries(
-  ISSUE_PRIORITIES.map((p) => [p.value, p.label])
-) as Record<IssuePriority, string>
+  WORK_ITEM_PRIORITIES.map((p) => [p.value, p.label])
+) as Record<WorkItemPriority, string>
 
-export function IssueTypeBadge({
+export function WorkItemTypeBadge({
   type,
   className,
 }: {
-  type: IssueType
+  type: WorkItemType
   className?: string
 }) {
   return (
@@ -121,7 +135,7 @@ export function IssueTypeBadge({
   )
 }
 
-export function IssueStatusBadge({
+export function WorkItemStatusBadge({
   status,
   className,
 }: {
@@ -142,11 +156,11 @@ export function IssueStatusBadge({
   )
 }
 
-export function IssueSeverityBadge({
+export function WorkItemSeverityBadge({
   severity,
   className,
 }: {
-  severity: IssueSeverity | null
+  severity: WorkItemSeverity | null
   className?: string
 }) {
   if (severity === null) return null
@@ -164,23 +178,44 @@ export function IssueSeverityBadge({
   )
 }
 
-export function IssuePriorityBadge({
+export function WorkItemPriorityIcon({
   priority,
   className,
 }: {
-  priority: IssuePriority
+  priority: WorkItemPriority
+  className?: string
+}) {
+  const { icon: Icon, className: colorClassName } = PRIORITY_ICONS[priority]
+  return <Icon className={cn("size-3.5 shrink-0", colorClassName, className)} />
+}
+
+/** Icon + label. With `compact`, "No priority" shows just the dash (label kept for screen readers). */
+export function WorkItemPriorityLabel({
+  priority,
+  compact,
+  className,
+}: {
+  priority: WorkItemPriority
+  compact?: boolean
   className?: string
 }) {
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "border-transparent",
-        PRIORITY_CLASSNAMES[priority],
-        className
-      )}
-    >
-      {PRIORITY_LABELS[priority]}
-    </Badge>
+    <span className={cn("inline-flex items-center gap-1.5", className)}>
+      <WorkItemPriorityIcon priority={priority} />
+      <span
+        className={cn(
+          priority === "none" && "text-subtle-foreground",
+          compact && priority === "none" && "sr-only"
+        )}
+      >
+        {PRIORITY_LABELS[priority]}
+      </span>
+    </span>
   )
 }
+
+/** Menu options with the priority icon next to each label. */
+export const WORK_ITEM_PRIORITY_OPTIONS = WORK_ITEM_PRIORITIES.map((p) => ({
+  value: p.value,
+  label: <WorkItemPriorityLabel priority={p.value} />,
+}))

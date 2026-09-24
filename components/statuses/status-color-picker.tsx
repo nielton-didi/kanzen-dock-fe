@@ -5,7 +5,7 @@ import { cn } from "cn"
 import {
   STATUS_COLORS,
   STATUS_SWATCH_CLASSNAMES,
-} from "@/components/issues/issue-badges"
+} from "@/components/work-items/work-item-badges"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { StatusColor } from "@/lib/types"
 
